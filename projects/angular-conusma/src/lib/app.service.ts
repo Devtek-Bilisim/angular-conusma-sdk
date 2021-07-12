@@ -1,18 +1,19 @@
 import { ConusmaRestApiException } from "./Exceptions/conusma-restapi-exception";
 
 export class AppService {
-  private appId: string;
-  private apiUrl: string;
-  private token: string;
-  private deviceId: string;
+  private appId: string = "";
+  private apiUrl: string = "";
+  private token: string = "";
+  private deviceId: string = "";
   private version: string = "1.0.0";
-  constructor(appId: string, parameters: { apiUrl: string, deviceId: string, version: string }) {
+  constructor() {
+  }
+  public setParameters(appId:string, parameters: { apiUrl: string, deviceId: string, version: string }) {
     this.appId = appId;
     this.apiUrl = parameters.apiUrl;
     this.token = "";
     this.deviceId = parameters.deviceId;
     this.version = parameters.version;
-
   }
   public setJwtToken(token: string) {
     this.token = token;

@@ -1,5 +1,5 @@
 import { AppService } from "./app.service";
-import * as io from 'socket.io-client';
+import { io } from "socket.io-client";
 import { MeetingUserModel } from "./Models/meeting-user-model";
 import { ConusmaException } from "./Exceptions/conusma-exception";
 import { ConusmaWorker } from "./conusma-worker";
@@ -89,7 +89,7 @@ export class Meeting {
         if (mediaServer == null || mediaServer == undefined) {
             mediaServer = new MediaServer(this.appService);
             mediaServer.id = _MediaServerModel.Id;
-            mediaServer.socket = io.connect(_MediaServerModel.ConnectionDnsAddress + ":" + _MediaServerModel.Port);
+            mediaServer.socket = io(_MediaServerModel.ConnectionDnsAddress + ":" + _MediaServerModel.Port);
             this.mediaServers.push(mediaServer);
             var userInfoData = { 'MeetingUserId': this.activeUser.Id, 'Token': this.appService.getJwtToken() };
             let setUserInfo = await this.signal('UserInfo', userInfoData, mediaServer.socket);

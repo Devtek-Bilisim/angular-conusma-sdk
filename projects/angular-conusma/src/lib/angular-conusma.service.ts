@@ -9,12 +9,17 @@ import { GuestUser } from './guest-user';
 })
 export class AngularConusmaService {
 
-  private appService: AppService;
-  constructor(appId: string, parameters: { apiUrl: string }) {
-    var deviceId =  "DeviceInfo.getUniqueId()";
-    this.appService = new AppService(appId, { apiUrl: parameters.apiUrl,deviceId:deviceId, version:'1.0.0'});
-
+  private appId:string = "";
+  private apiUrl:string = "";
+  constructor(private appService:AppService) {
   }
+  public setParameters(appId:string, parameters: { apiUrl:string } ) {
+    var deviceId =  "DeviceInfo.getUniqueId()";
+    this.appId = appId;
+    this.apiUrl = parameters.apiUrl;
+    this.appService.setParameters(this.appId, { apiUrl: this.apiUrl, deviceId:deviceId, version:'1.0.0'});
+  }
+
   public async createUser() {
     try {
       var user: User = new User(this.appService);

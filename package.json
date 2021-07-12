@@ -20,7 +20,7 @@
     "@angular/router": "~11.0.6",
     "mediasoup-client": "^3.6.36",
     "rxjs": "~6.6.0",
-    "socket.io-client": "^2.4.0",
+    "socket.io-client": "^3.0.3",
     "tslib": "^2.0.0",
     "zone.js": "~0.10.2"
   },

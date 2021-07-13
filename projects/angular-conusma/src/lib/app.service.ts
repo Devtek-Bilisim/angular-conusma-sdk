@@ -3,7 +3,6 @@ import { ConusmaRestApiException } from "./Exceptions/conusma-restapi-exception"
 export class AppService {
   private appId: string = "";
   private apiUrl: string = "";
-  private token: string = "";
   private deviceId: string = "";
   private version: string = "1.0.0";
   constructor() {
@@ -11,17 +10,10 @@ export class AppService {
   public setParameters(appId:string, parameters: { apiUrl: string, deviceId: string, version: string }) {
     this.appId = appId;
     this.apiUrl = parameters.apiUrl;
-    this.token = "";
     this.deviceId = parameters.deviceId;
     this.version = parameters.version;
   }
-  public setJwtToken(token: string) {
-    this.token = token;
-  }
-
-  public getJwtToken(): string {
-    return this.token;
-  }
+  
   public async createUserWithDeviceId() {
     var response = await fetch(this.apiUrl + "/User/AddUserWithAppCode", {
       method: 'POST',
@@ -45,7 +37,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.token
+        'Token': this.getJwtToken()
       }
     });
     return await response.json();
@@ -57,7 +49,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.token
+        'Token': this.getJwtToken()
       }
     });
     return await response.json();
@@ -69,7 +61,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.token
+        'Token': this.getJwtToken()
       }
     });
     if (!response.ok) {
@@ -84,7 +76,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.token
+        'Token': this.getJwtToken()
       },
       body: JSON.stringify({
         meetingId: meetingId,
@@ -93,7 +85,7 @@ export class AppService {
     return await response.json();
   }
 
-  public async login(userKey: string, password: string, deviceId: string) {
+  public async login(userKey: string, password: string) {
     var response = await fetch(this.apiUrl + "/Login/UserLogin", {
       method: 'POST',
       headers: {
@@ -103,12 +95,37 @@ export class AppService {
       body: JSON.stringify({
         userKey: userKey,
         password: password,
-        deviceId: deviceId
+        deviceId: this.deviceId
       })
     });
     return await response.json();
   }
+  public storeTokens(jwtToken:string, username:string, isloggedin:string, rememberme:string) {
+    localStorage.setItem("rememberme", rememberme);
+    if (rememberme) {
+      localStorage.setItem("JWT_TOKEN", jwtToken);
+      localStorage.setItem('isLoggedin', isloggedin);
+      localStorage.setItem('username', username);
+      localStorage.removeItem("PublicToken");
+      localStorage.removeItem("PublicUserData");
+    } else {
+      sessionStorage.setItem("JWT_TOKEN", jwtToken);
+      sessionStorage.setItem('isLoggedin', isloggedin);
+      sessionStorage.setItem('username', username);
+      localStorage.removeItem('rememberme');
+      localStorage.removeItem("PublicToken");
+      localStorage.removeItem("PublicUserData");
+    }
+}
 
+public getJwtToken():string {
+  let rememberme = localStorage.getItem("rememberme");
+  if (rememberme) {
+    return localStorage.getItem("JWT_TOKEN") ?? "";
+  } else {
+    return sessionStorage.getItem("JWT_TOKEN") ?? "";
+  }
+}
   public async checkSafeDeviceCode(code: string, deviceId: string) {
     var response = await fetch(this.apiUrl + "/Login/SafeDeviceCodeCheck", {
       method: 'POST',
@@ -145,7 +162,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.token
+        'Token': this.getJwtToken()
       }
     });
     return await response.json();
@@ -205,7 +222,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -250,7 +267,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     if (!response.ok) {
@@ -265,7 +282,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -278,7 +295,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -291,7 +308,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     return await response.json();
@@ -303,7 +320,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify({
         id: id
@@ -318,7 +335,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify({
         fileName: fileName,
@@ -335,7 +352,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     return await response.json();
@@ -347,7 +364,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify({
         logs: logs
@@ -387,7 +404,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify({
         log: log
@@ -401,7 +418,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     return await response.json();
@@ -413,7 +430,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     return await response.json();
@@ -425,7 +442,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -438,7 +455,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -451,7 +468,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -464,7 +481,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify({
         meetingId: meetingId,
@@ -483,7 +500,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify({
         meetingId: meetingId,
@@ -503,7 +520,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     if (!response.ok) {
@@ -518,7 +535,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     return await response.json();
@@ -529,7 +546,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     return await response.json();
@@ -541,7 +558,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     return await response.json();
@@ -553,7 +570,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       }
     });
     return await response.json();
@@ -565,7 +582,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -578,7 +595,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -594,7 +611,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -610,7 +627,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -623,7 +640,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -636,7 +653,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -649,7 +666,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -662,7 +679,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -675,7 +692,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -688,7 +705,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -701,7 +718,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -714,7 +731,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -727,7 +744,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -740,7 +757,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -753,7 +770,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -766,7 +783,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -779,7 +796,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -792,7 +809,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -805,7 +822,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.token
+        Token: this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -817,7 +834,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.token
+        'Token': this.getJwtToken()
       },
       body: JSON.stringify({meetingUserId:_meetingUserId})
     });
@@ -832,7 +849,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.token
+        'Token': this.getJwtToken()
       },
       body: JSON.stringify({meetingUserId:_meetingUserId})
     });

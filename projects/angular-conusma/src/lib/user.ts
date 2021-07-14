@@ -16,7 +16,6 @@ export class User {
     {
         var result = await this.appService.createUserWithDeviceId();
         this.userInfo = result;
-        this.appService.setJwtToken(this.userInfo.Token);
     }
     public async createMeeting()
     {

@@ -17,13 +17,13 @@ export class GuestUser {
     if (token != undefined && token != null) {
       var result = await this.appService.createPublicUser(token);
       this.userInfo = result;
-      this.appService.setJwtToken(this.userInfo.Token);
+      this.appService.setPublicToken(this.userInfo.Token);
       localStorage.setItem('conusmaGuestToken', this.userInfo.Token);
     }
     else {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      this.appService.setJwtToken(this.userInfo.Token);
+      this.appService.setPublicToken(this.userInfo.Token);
       localStorage.setItem('conusmaGuestToken', this.userInfo.Token);
     }
 

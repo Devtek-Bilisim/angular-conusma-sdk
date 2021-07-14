@@ -117,6 +117,9 @@ export class AppService {
       localStorage.removeItem("PublicUserData");
     }
 }
+public setPublicToken(publicToken:string) {
+  localStorage.setItem("PublicToken", publicToken);
+}
 
 public getJwtToken():string {
   let rememberme = localStorage.getItem("rememberme");

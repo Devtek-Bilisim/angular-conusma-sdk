@@ -127,24 +127,24 @@ export class Meeting {
         } catch (error) {
             throw new ConusmaException("enableAudioVideo", "can not read stream , please check exception ", error);
         }
-        const isFrontCamera = true;
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const facing = isFrontCamera ? 'front' : 'environment';
-        const videoSourceId = devices.find(
-            (device: any) => device.kind === 'videoinput' && device.facing === facing,
-        );
-        const facingMode = isFrontCamera ? 'user' : 'environment';
-        const constraints: any = {
-            audio: true,
-            video: {
-                mandatory: {
-                    minWidth: 500,
-                    minHeight: 300,
-                    minFrameRate: 30,
-                },
-                facingMode,
-                optional: videoSourceId ? [{ sourceId: videoSourceId }] : [],
+        const videoConstraints: any = {
+            "width": {
+                "min": "320",
+                "ideal": "480",
+                "max": "640"
             },
+            "height": {
+                "min": "240",
+                "ideal": "360",
+                "max": "480"
+            },
+            "frameRate": "10"
+        };
+        const audioConstraints: any = { 'echoCancellation': true };
+    
+        const constraints: any = {
+            video: videoConstraints,
+            audio: audioConstraints
         };
         const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
         return newStream;

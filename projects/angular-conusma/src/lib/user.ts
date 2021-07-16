@@ -8,10 +8,13 @@ import { UserModel } from "./Models/user-model";
 export class User {
     constructor(_appService:AppService) {
         this.appService = _appService;
-       
     }
     private appService:AppService ;
     public userInfo:UserModel = new UserModel();
+    public async load() {
+      var result = await this.appService.getProfile();
+      this.userInfo = result;
+    }
     public async create()
     {
         var result = await this.appService.createUserWithDeviceId();

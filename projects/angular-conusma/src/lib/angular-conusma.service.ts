@@ -10,8 +10,6 @@ import { BehaviorSubject, Subject, of } from 'rxjs';
 import { map, mapTo, catchError, throwIfEmpty } from "rxjs/operators";
 import { Router } from '@angular/router';
 import { AlertController, Platform } from '@ionic/angular';
-import { Detect} from './detect';
-import { Device } from '@ionic-native/device/ngx';
 import { CacheBuster, Cacheable } from 'ts-cacheable';
 const cacheBuster$ = new Subject<void>();
 @Injectable({
@@ -23,7 +21,7 @@ export class AngularConusmaService {
   private apiUrl:string = "";
   private deviceId:string = "";
   private appService:AppService;
-  constructor(private detect:Detect, private http: HttpClient, private router:Router, private alertController:AlertController, private device:Device, private platform:Platform) {
+  constructor(private http: HttpClient, private router:Router, private alertController:AlertController, private platform:Platform) {
     this.appService = new AppService();
   }
   public setParameters(appId:string, parameters: { apiUrl:string, deviceId:string } ) {
@@ -31,6 +29,16 @@ export class AngularConusmaService {
     this.appId = appId;
     this.apiUrl = parameters.apiUrl;
     this.appService.setParameters(this.appId, { apiUrl:this.apiUrl, deviceId:this.deviceId, version: "1.0.0" });
+  }
+
+  public async loadUser() {
+    try {
+      var user: User = new User(this.appService);
+      await user.load();
+      return user;
+    } catch (error) {
+      throw new ConusmaException("loadUser","User cannot be loaded.", error);
+    }
   }
 
   public async createUser() {
@@ -299,44 +307,6 @@ public getJwtToken() {
 
   public addLogs(logs:any[]):Observable<boolean> {
     return this.httpPost("ClientLog/AddLogList", logs).pipe(map((result:any) => {
-      if (result.result == "ok")
-        return true;
-      else
-        return false;      
-    }));
-  }
-
-  public addLog(status:number, category:string, message:string, username:string="", cam:boolean= true, mic:boolean = true):Observable<boolean> {
-      if (username != "")
-      {
-        username = localStorage.getItem("username") ?? "";
-      }
-      var ua = this.detect.parse(navigator.userAgent);
-
-      var log = {
-        "uuid":this.device.uuid,
-        "ClientVer": "1.0.0",
-        "Mac": "50:9C:58:3C:0B:DB",
-        "Platform": (this.platform.is('ipad')?'ipad, ':'')+(this.platform.is('iphone')?'iphone, ':'')+(this.platform.is('ios')?'ios, ':'')+(this.platform.is('android')?'android, ':'')+(this.platform.is('phablet')?'phablet, ':'')+(this.platform.is('tablet')?'tablet, ':'')+(this.platform.is('cordova')?'cordova, ':'')+(this.platform.is('capacitor')?'capacitor, ':'')+(this.platform.is('electron')?'electron, ':'') + (this.platform.is('pwa')?'pwa, ':'')+(this.platform.is('mobile')?'mobile, ':'')+(this.platform.is('mobileweb')?'mobileweb, ':'')+(this.platform.is('desktop')?'desktop':'')+(this.platform.is('hybrid')?'hybrid':''),
-        "DeviceModel": this.device.model,
-        "DevicePlatform": this.device.platform,
-        "DeviceVersion": this.device.version,
-        "DeviceManufacturer": this.device.manufacturer,
-        "DeviceIsVirtual":(this.device.isVirtual!=null?this.device.isVirtual:false),
-        "UserName" : (username != undefined && username != null ? username : ""),
-        "ConferenceId" :(this.meeting != null ? this.meeting.ConferenceId: ""),
-        "Resolution": this.platform.width() + "x" + this.platform.height(),
-        "Browser": ua.browser.name,
-        "BrowserVersion": ua.browser.version,
-        "OS": ua.os.name,
-        "OSVersion": ua.os.version,
-        "Camera": cam,
-        "Mic": mic,
-        "Status":status,
-        "Title":category,
-        "Detail":message,
-    };
-    return this.httpPost("ClientLog/AddLog", log).pipe(map((result:any) => {
       if (result.result == "ok")
         return true;
       else

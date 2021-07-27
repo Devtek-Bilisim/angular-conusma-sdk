@@ -11,6 +11,10 @@ import { map, mapTo, catchError, throwIfEmpty } from "rxjs/operators";
 import { Router } from '@angular/router';
 import { AlertController, Platform } from '@ionic/angular';
 import { CacheBuster, Cacheable } from 'ts-cacheable';
+import { Store } from '@ngrx/store';
+import { MeetingUserModel } from './Models/meeting-user-model';
+import { Meeting } from './meeting';
+
 const cacheBuster$ = new Subject<void>();
 @Injectable({
   providedIn: 'root'
@@ -21,7 +25,13 @@ export class AngularConusmaService {
   private apiUrl:string = "";
   private deviceId:string = "";
   private appService:AppService;
-  constructor(private http: HttpClient, private router:Router, private alertController:AlertController, private platform:Platform) {
+  meetingUser$: Observable<MeetingUserModel>;
+  private meetingUser:MeetingUserModel = new MeetingUserModel();
+  constructor(private http: HttpClient, private router:Router, private alertController:AlertController, private platform:Platform, private store: Store<{ meetingUser: MeetingUserModel }>) {
+    this.meetingUser$ = store.select('meetingUser');
+    this.meetingUser$.subscribe((value:MeetingUserModel) => {
+      this.meetingUser = value;
+    });
     this.appService = new AppService();
   }
   public setParameters(appId:string, parameters: { apiUrl:string, deviceId:string } ) {
@@ -33,7 +43,7 @@ export class AngularConusmaService {
 
   public async loadUser() {
     try {
-      var user: User = new User(this.appService);
+      var user: User = new User(this.appService, this.store);
       await user.load();
       return user;
     } catch (error) {
@@ -43,7 +53,7 @@ export class AngularConusmaService {
 
   public async loadGuestUser() {
     try {
-      var user: GuestUser = new GuestUser(this.appService);
+      var user: GuestUser = new GuestUser(this.appService, this.store);
       await user.load();
       return user;
     } catch (error) {
@@ -51,9 +61,17 @@ export class AngularConusmaService {
     }
   }
 
+  public async loadMeeting() {
+    try {
+      return new Meeting(this.meetingUser, this.appService);
+    } catch (error) {
+      throw new ConusmaException("loadMeeting","Meeting cannot be loaded.", error);
+    }
+  }
+
   public async createUser() {
     try {
-      var user: User = new User(this.appService);
+      var user: User = new User(this.appService, this.store);
       await user.create();
       return user;
     } catch (error) {
@@ -63,7 +81,7 @@ export class AngularConusmaService {
 
   public async createGuestUser() {
     try {
-      var user: GuestUser = new GuestUser(this.appService);
+      var user: GuestUser = new GuestUser(this.appService, this.store);
       await user.create();
       return user;
     } catch (error) {

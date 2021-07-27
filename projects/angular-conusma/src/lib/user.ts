@@ -1,13 +1,18 @@
+import { Store } from "@ngrx/store";
+import { Observable } from "rxjs";
 import { AppService } from "./app.service";
 import { ConusmaException } from "./Exceptions/conusma-exception";
 import { Meeting } from "./meeting";
+import { updateMeetingUser } from "./meeting.actions";
 import { MeetingModel } from "./Models/meeting-model";
 import { MeetingUserModel } from "./Models/meeting-user-model";
 import { UserModel } from "./Models/user-model";
 
 export class User {
-    constructor(_appService:AppService) {
-        this.appService = _appService;
+    meetingUser$: Observable<MeetingUserModel>;
+    constructor(_appService:AppService, private store: Store<{ meetingUser: MeetingUserModel }>) {
+      this.meetingUser$ = store.select('meetingUser');
+      this.appService = _appService;
     }
     private appService:AppService ;
     public userInfo:UserModel = new UserModel();
@@ -55,6 +60,7 @@ export class User {
             var result = await this.appService.joinMeeting(meeting.MeetingId,meeting.Password,meetingName);
             var meetingUser:MeetingUserModel = result;
             var activeMeeting = new Meeting(meetingUser, this.appService);
+            this.store.dispatch(updateMeetingUser({ meetingUserModel: meetingUser }));
             return activeMeeting;
           } catch (error) {
             throw new ConusmaException("joinMeeting", "Failed to join the meeting", error);

@@ -41,6 +41,16 @@ export class AngularConusmaService {
     }
   }
 
+  public async loadGuestUser() {
+    try {
+      var user: GuestUser = new GuestUser(this.appService);
+      await user.load();
+      return user;
+    } catch (error) {
+      throw new ConusmaException("loadGuestUser","Guest User cannot be loaded.", error);
+    }
+  }
+
   public async createUser() {
     try {
       var user: User = new User(this.appService);

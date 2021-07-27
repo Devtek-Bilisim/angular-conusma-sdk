@@ -28,6 +28,22 @@ export class GuestUser {
     }
 
   }
+  public async load() {
+    var token = localStorage.getItem('conusmaGuestToken');
+    if (token != undefined && token != null) {
+      var result = await this.appService.createPublicUser(token);
+      this.userInfo = result;
+      this.appService.setPublicToken(this.userInfo.Token);
+      localStorage.setItem('conusmaGuestToken', this.userInfo.Token);
+    }
+    else {
+      var result = await this.appService.createPublicUser();
+      this.userInfo = result;
+      this.appService.setPublicToken(this.userInfo.Token);
+      localStorage.setItem('conusmaGuestToken', this.userInfo.Token);
+    }
+
+  }
   public async joinMeetingByInviteCode(inviteCode: string, meetingName: string = 'Guest') {
     try {
       var resultcode = await this.appService.controlInviteCode(inviteCode);

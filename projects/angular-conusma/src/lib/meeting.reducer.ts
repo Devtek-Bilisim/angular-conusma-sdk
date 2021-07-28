@@ -1,13 +1,13 @@
 import { InjectionToken } from '@angular/core';
-import { createReducer, on } from '@ngrx/store';
+import { Action, ActionReducer, createReducer, on, INIT, UPDATE } from '@ngrx/store';
 import { updateMeetingUser } from './meeting.actions';
 import { MeetingUserModel } from './Models/meeting-user-model';
- 
+
 export const initialState:MeetingUserModel = new MeetingUserModel();
  
 const _meetingReducer = createReducer(
   initialState,
-  on(updateMeetingUser, (state, { meetingUserModel }) => ({ ...state, meetingUserModel })),
+  on(updateMeetingUser, (state, { meetingUser }) => ({ ...state, meetingUser })),
 );
 export const ROOT_REDUCER = new InjectionToken<any>('Root Reducer', {factory: () => ({meetingUser: meetingReducer})});
 

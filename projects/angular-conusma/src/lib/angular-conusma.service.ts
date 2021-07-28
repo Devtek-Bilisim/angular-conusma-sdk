@@ -11,9 +11,11 @@ import { map, mapTo, catchError, throwIfEmpty } from "rxjs/operators";
 import { Router } from '@angular/router';
 import { AlertController, Platform } from '@ionic/angular';
 import { CacheBuster, Cacheable } from 'ts-cacheable';
-import { Store } from '@ngrx/store';
+import { select, Store } from '@ngrx/store';
 import { MeetingUserModel } from './Models/meeting-user-model';
 import { Meeting } from './meeting';
+import { timingSafeEqual } from 'crypto';
+import { threadId } from 'worker_threads';
 
 const cacheBuster$ = new Subject<void>();
 @Injectable({
@@ -25,15 +27,12 @@ export class AngularConusmaService {
   private apiUrl:string = "";
   private deviceId:string = "";
   private appService:AppService;
-  meetingUser$: Observable<MeetingUserModel>;
-  private meetingUser:MeetingUserModel = new MeetingUserModel();
+  private meetingUser$: Observable<MeetingUserModel>;
   constructor(private http: HttpClient, private router:Router, private alertController:AlertController, private platform:Platform, private store: Store<{ meetingUser: MeetingUserModel }>) {
-    this.meetingUser$ = store.select('meetingUser');
-    this.meetingUser$.subscribe((value:MeetingUserModel) => {
-      this.meetingUser = value;
-    });
+    this.meetingUser$ = this.store.select('meetingUser');
     this.appService = new AppService();
   }
+
   public setParameters(appId:string, parameters: { apiUrl:string, deviceId:string } ) {
     this.deviceId = parameters.deviceId;
     this.appId = appId;
@@ -61,9 +60,10 @@ export class AngularConusmaService {
     }
   }
 
-  public async loadMeeting() {
+  public loadMeeting() {
     try {
-      return new Meeting(this.meetingUser, this.appService);
+      let state = JSON.parse(sessionStorage.getItem("MeetingUser") ?? "");
+      return new Meeting(state, this.appService);
     } catch (error) {
       throw new ConusmaException("loadMeeting","Meeting cannot be loaded.", error);
     }

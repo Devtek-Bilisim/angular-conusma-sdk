@@ -146,14 +146,13 @@ export class MediaServer {
             this.consumerTransports.push(result);
             return <MediaStream>result.RemoteStream;
         } catch (error) {
-
             throw new ConusmaException("consume", producerUser.Id + "The stream of the user is currently not captured. User connection information is out of date.", error);
         }
     }
 
     private async createConsumerTransport(targetMediaServerClient: MediaServer, user: MeetingUserModel) {
         if (targetMediaServerClient != null && targetMediaServerClient.socket != null) {
-            console.log("createConsumerChildFunction start.");
+
             var consumerTransport: any = new Object();
             consumerTransport.MediaServer = targetMediaServerClient;
             consumerTransport.MeetingUserId = user.Id;
@@ -170,7 +169,7 @@ export class MediaServer {
             consumerTransport.Camera = user.Camera;
             consumerTransport.Mic = user.Mic;
             consumerTransport.ShareScreen = user.ShareScreen;
-            console.log("createConsumerChildFunction creating the consumer.");
+            console.log("createConsumerTransport creating the consumer.");
             if (user.Camera || user.ShareScreen) {
                 await this.addConsumer(consumerTransport, "video");
             }
@@ -180,7 +179,7 @@ export class MediaServer {
             }
             return consumerTransport;
         } else {
-            throw new ConusmaException("createConsumerChildFunction", "No socket connection.");
+            throw new ConusmaException("createConsumerTransport", "No socket connection.");
         }
     }
 

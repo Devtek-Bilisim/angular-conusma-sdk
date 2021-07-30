@@ -123,38 +123,59 @@ export class Meeting {
 
     public async enableAudioVideo() {
         try {
-
+            const videoConstraints: any = {
+                "width": {
+                    "min": "320",
+                    "ideal": "480",
+                    "max": "640"
+                },
+                "height": {
+                    "min": "240",
+                    "ideal": "360",
+                    "max": "480"
+                },
+                "frameRate": "10"
+            };
+            const audioConstraints: any = { 'echoCancellation': true };
+        
+            const constraints: any = {
+                video: videoConstraints,
+                audio: audioConstraints
+            };
+            const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            return newStream;
         } catch (error) {
-            throw new ConusmaException("enableAudioVideo", "can not read stream , please check exception ", error);
+            throw new ConusmaException("enableAudioVideo", "can not read stream, please check exception.", error);
         }
-        const videoConstraints: any = {
-            "width": {
-                "min": "320",
-                "ideal": "480",
-                "max": "640"
-            },
-            "height": {
-                "min": "240",
-                "ideal": "360",
-                "max": "480"
-            },
-            "frameRate": "10"
-        };
-        const audioConstraints: any = { 'echoCancellation': true };
-    
-        const constraints: any = {
-            video: videoConstraints,
-            audio: audioConstraints
-        };
-        const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-        return newStream;
+        
     }
+
+    public async enableScreenShare() {
+        try {
+            const displayMediaOptions = {
+                video: {
+                    cursor: "always"
+                },
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 44100
+                }
+            }
+            const newStream: MediaStream = await (navigator as any).mediaDevices.getDisplayMedia(displayMediaOptions);
+            return newStream;
+            
+        } catch (error) {
+            throw new ConusmaException("enableScreenShare", "can not read screen, please check exception.", error);
+        }
+    }
+
     public async connectMeeting() {
         try {
             await this.appService.connectMeeting(this.activeUser);
             console.log("User connected to the meeting.");
         } catch (error) {
-            throw new ConusmaException("connectMeeting", "can not connect meeting , please check exception", error);
+            throw new ConusmaException("connectMeeting", "can not connect meeting, please check exception", error);
         }
 
     }

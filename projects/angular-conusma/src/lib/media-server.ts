@@ -84,7 +84,7 @@ export class MediaServer {
         }
     }
 
-    private async createProducer(localStream: MediaStream, kind: string) {
+    public async createProducer(localStream: MediaStream, kind: string) {
         try {
             if (kind == 'video') {
                 const videoTrack = localStream.getVideoTracks()[0];
@@ -197,7 +197,7 @@ export class MediaServer {
             }
         }
     }
-    private async resumeConsumer(consumerTransport: any, kind: string) {
+    public async resumeConsumer(consumerTransport: any, kind: string) {
         this.signal('resume', { consumerTransportId: consumerTransport.transportId, kind: kind }, consumerTransport.MediaServer.socket);
     }
 
@@ -226,7 +226,7 @@ export class MediaServer {
     }
 
       
-    private async pauseConsumer(consumerTransport: any, kind: string) {
+    public async pauseConsumer(consumerTransport: any, kind: string) {
         try {
             if (consumerTransport != null && consumerTransport.videoConsumer != null) {
                 if (kind == 'video') {

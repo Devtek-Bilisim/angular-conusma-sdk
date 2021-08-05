@@ -234,6 +234,28 @@ export class Meeting {
         var connection = await this.createConnectionForProducer();
         connection.stream = localStream;
         await connection.mediaServer.produce(this.activeUser, localStream);
+        if (localStream != null) {
+            if (localStream.getVideoTracks().length > 0) {
+                connection.user.ActiveCamera = localStream.getVideoTracks()[0].enabled;
+                connection.user.Camera = true;
+            } else {
+                connection.user.ActiveCamera = false;
+                connection.user.Camera = false;
+            }
+
+            if (localStream.getAudioTracks().length > 0) {
+                connection.user.ActiveMic = localStream.getAudioTracks()[0].enabled;
+                connection.user.Mic = true;
+            } else {
+                connection.user.ActiveMic = false;
+                connection.user.Mic = false;
+            }
+        } else {
+            connection.user.ActiveCamera = false;
+            connection.user.Camera = false;
+            connection.user.ActiveMic = false;
+            connection.user.Mic = false;
+        }
         return connection;
     }
 

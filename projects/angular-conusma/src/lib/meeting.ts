@@ -20,6 +20,10 @@ export class Meeting {
 
     public isClosedRequestRecieved: boolean = false;
 
+    public audioInputs: MediaDeviceInfo[] = [];
+    public audioOutputs: MediaDeviceInfo[] = [];
+    public videoInputs: MediaDeviceInfo[] = [];
+
     constructor(activeUser: MeetingUserModel, appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
@@ -120,10 +124,48 @@ export class Meeting {
             console.error("no socket connection " + type);
         }
     }
-
-    public async enableAudioVideo() {
+    public switchSpeaker(speaker:MediaDeviceInfo, videoElement:any) {
         try {
-            const videoConstraints: any = {
+            videoElement.setSinkId(speaker.deviceId);     
+        } catch (error) {
+            throw new ConusmaException("switchSpeaker", "Cannot switch speaker", error);
+        }
+    }
+    
+    public async getDevices() {
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            await navigator.mediaDevices.enumerateDevices()
+                .then((deviceInfos) => {
+                    this.audioInputs = [];
+                    this.audioOutputs = [];
+                    this.videoInputs = [];
+                    for (var i = 0; i !== deviceInfos.length; ++i) {
+                        var deviceInfo = deviceInfos[i];
+                        var option = document.createElement('option');
+                        option.value = deviceInfo.deviceId;
+                        if (deviceInfo.kind === 'audioinput') {
+                            this.audioInputs.push(deviceInfo);
+                            this.activeUser.Mic = true;
+                        } else if (deviceInfo.kind === 'audiooutput') {
+                            this.audioOutputs.push(deviceInfo);
+                        } else if (deviceInfo.kind === 'videoinput') {
+                            this.videoInputs.push(deviceInfo)
+                            this.activeUser.Camera = true;
+                        }
+                    }
+               
+                });
+        } else {
+            this.activeUser.Mic = false;
+            this.activeUser.ActiveMic = false;
+            this.activeUser.Camera = false;
+            this.activeUser.ActiveCamera = false;
+        }
+    }
+
+    public async enableAudioVideo(camera:MediaDeviceInfo, microphone:MediaDeviceInfo) {
+        try {
+            var videoConstraints: any = {
                 "width": {
                     "min": "320",
                     "ideal": "480",
@@ -136,16 +178,39 @@ export class Meeting {
                 },
                 "frameRate": "10"
             };
-            const audioConstraints: any = { 'echoCancellation': true };
+            var audioConstraints: any = { 'echoCancellation': true };
         
+            if (camera) {
+                videoConstraints.deviceId = { exact: camera.deviceId };
+            }
+            if (microphone) {
+                audioConstraints.deviceId = { exact: microphone.deviceId };
+            }
             const constraints: any = {
                 video: videoConstraints,
                 audio: audioConstraints
             };
+            await this.getDevices();
             const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            if (newStream != null) {
+                if (newStream.getVideoTracks().length > 0) {
+                    this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
+                } else {
+                    this.activeUser.ActiveCamera = false;
+                }
+    
+                if (newStream.getAudioTracks().length > 0) {
+                    this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
+                } else {
+                    this.activeUser.ActiveMic = false;
+                }
+            } else {
+                this.activeUser.ActiveCamera = false;
+                this.activeUser.ActiveMic = false;
+            }
             return newStream;
         } catch (error) {
-            throw new ConusmaException("enableAudioVideo", "can not read stream, please check exception.", error);
+            throw new ConusmaException("enableAudioVideo", "can not read camera and microphone, please check exception.", error);
         }
         
     }
@@ -234,28 +299,6 @@ export class Meeting {
         var connection = await this.createConnectionForProducer();
         connection.stream = localStream;
         await connection.mediaServer.produce(this.activeUser, localStream);
-        if (localStream != null) {
-            if (localStream.getVideoTracks().length > 0) {
-                connection.user.ActiveCamera = localStream.getVideoTracks()[0].enabled;
-                connection.user.Camera = true;
-            } else {
-                connection.user.ActiveCamera = false;
-                connection.user.Camera = false;
-            }
-
-            if (localStream.getAudioTracks().length > 0) {
-                connection.user.ActiveMic = localStream.getAudioTracks()[0].enabled;
-                connection.user.Mic = true;
-            } else {
-                connection.user.ActiveMic = false;
-                connection.user.Mic = false;
-            }
-        } else {
-            connection.user.ActiveCamera = false;
-            connection.user.Camera = false;
-            connection.user.ActiveMic = false;
-            connection.user.Mic = false;
-        }
         return connection;
     }
 

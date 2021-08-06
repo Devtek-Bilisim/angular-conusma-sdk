@@ -24,9 +24,19 @@ export class Meeting {
     public audioOutputs: MediaDeviceInfo[] = [];
     public videoInputs: MediaDeviceInfo[] = [];
 
+    public activeCamera:any;
+    public activeMicrophone:any;
+    
     constructor(activeUser: MeetingUserModel, appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
+        this.getDevices().then(() => {
+            if (this.videoInputs.length > 0)
+                this.activeCamera = this.videoInputs[0];
+            if (this.audioInputs.length > 0)
+                this.activeMicrophone = this.audioInputs[0];
+        });
+        
         this.conusmaWorker = new ConusmaWorker(this.appService, this.activeUser);
     }
 
@@ -162,8 +172,13 @@ export class Meeting {
             this.activeUser.ActiveCamera = false;
         }
     }
-
-    public async enableAudioVideo(camera:MediaDeviceInfo, microphone:MediaDeviceInfo) {
+    public switchCamera(camera:MediaDeviceInfo) {
+        this.activeCamera = camera;
+    }
+    public switchMicrophone(microphone:MediaDeviceInfo) {
+        this.activeMicrophone = microphone;
+    }
+    public async enableAudioVideo() {
         try {
             var videoConstraints: any = {
                 "width": {
@@ -180,17 +195,16 @@ export class Meeting {
             };
             var audioConstraints: any = { 'echoCancellation': true };
         
-            if (camera) {
-                videoConstraints.deviceId = { exact: camera.deviceId };
+            if (this.activeCamera) {
+                videoConstraints.deviceId = { exact: this.activeCamera.deviceId };
             }
-            if (microphone) {
-                audioConstraints.deviceId = { exact: microphone.deviceId };
+            if (this.activeMicrophone) {
+                audioConstraints.deviceId = { exact: this.activeMicrophone.deviceId };
             }
             const constraints: any = {
                 video: videoConstraints,
                 audio: audioConstraints
             };
-            await this.getDevices();
             const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
             if (newStream != null) {
                 if (newStream.getVideoTracks().length > 0) {

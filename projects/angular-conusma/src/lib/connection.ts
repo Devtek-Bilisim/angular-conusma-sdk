@@ -38,6 +38,7 @@ export class Connection {
                     if (t.kind === 'audio') {
                         t.enabled = !t.enabled;
                         this.isAudioActive = t.enabled;
+                        this.user.ActiveMic = t.enabled;
 
                     }
                 });
@@ -56,6 +57,7 @@ export class Connection {
             if (this.isProducer && this.stream != null) {
                 this.isVideoActive = !this.isVideoActive;
                 this.stream.getVideoTracks()[0].enabled = this.isVideoActive;
+                this.user.ActiveMic = this.isVideoActive;
                 return this.isVideoActive;
             }
             else {

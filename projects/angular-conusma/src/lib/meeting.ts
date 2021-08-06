@@ -229,6 +229,74 @@ export class Meeting {
         
     }
 
+    public async enableAudio() {
+        try {
+            var audioConstraints: any = { 'echoCancellation': true };
+        
+            if (this.activeMicrophone) {
+                audioConstraints.deviceId = { exact: this.activeMicrophone.deviceId };
+            }
+            const constraints: any = {
+                video: false,
+                audio: audioConstraints
+            };
+            const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            if (newStream != null) {
+                if (newStream.getAudioTracks().length > 0) {
+                    this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
+                } else {
+                    this.activeUser.ActiveMic = false;
+                }
+            } else {
+                this.activeUser.ActiveMic = false;
+            }
+            return newStream;
+        } catch (error) {
+            throw new ConusmaException("enableAudio", "can not read microphone, please check exception.", error);
+        }
+    }
+
+    public async enableVideo() {
+        try {
+            var videoConstraints: any = {
+                "width": {
+                    "min": "320",
+                    "ideal": "480",
+                    "max": "640"
+                },
+                "height": {
+                    "min": "240",
+                    "ideal": "360",
+                    "max": "480"
+                },
+                "frameRate": "10"
+            };
+        
+            if (this.activeCamera) {
+                videoConstraints.deviceId = { exact: this.activeCamera.deviceId };
+            }
+ 
+            const constraints: any = {
+                video: videoConstraints
+            };
+
+            const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            if (newStream != null) {
+                if (newStream.getVideoTracks().length > 0) {
+                    this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
+                } else {
+                    this.activeUser.ActiveCamera = false;
+                }
+
+            } else {
+                this.activeUser.ActiveCamera = false;
+            }
+            return newStream;
+        } catch (error) {
+            throw new ConusmaException("enableVideo", "can not read camera, please check exception.", error);
+        } 
+    }
+
     public async enableScreenShare() {
         try {
             const displayMediaOptions = {

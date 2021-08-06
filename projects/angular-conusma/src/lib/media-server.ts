@@ -52,6 +52,14 @@ export class MediaServer {
         }
     }
 
+    public async replaceTrack(kind:string, stream:MediaStream) {
+        if (kind == "video") {
+            await this.videoProducer.replaceTrack({ track: stream.getVideoTracks()[0] });
+        } else if (kind == "audio") {
+            await this.audioProducer.replaceTrack({ track: stream.getAudioTracks()[0] });
+        }
+    }
+
     private async createProducerTransport() {
         try {
                 console.log("createProducerTransport started.");

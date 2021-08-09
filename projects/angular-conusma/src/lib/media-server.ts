@@ -55,8 +55,10 @@ export class MediaServer {
     public async replaceTrack(kind:string, stream:MediaStream) {
         if (kind == "video") {
             await this.videoProducer.replaceTrack({ track: stream.getVideoTracks()[0] });
+            this.videoProducer.track.enabled = stream.getVideoTracks()[0].enabled;
         } else if (kind == "audio") {
             await this.audioProducer.replaceTrack({ track: stream.getAudioTracks()[0] });
+            this.audioProducer.track.enabled = stream.getAudioTracks()[0].enabled;
         }
     }
 

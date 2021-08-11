@@ -2,7 +2,6 @@ import { AppService } from "./app.service";
 import { io } from "socket.io-client";
 import { MeetingUserModel } from "./Models/meeting-user-model";
 import { ConusmaException } from "./Exceptions/conusma-exception";
-import { ConusmaWorker } from "./conusma-worker";
 
 import { MediaServer } from "./media-server";
 import { Connection } from "./connection";
@@ -11,8 +10,7 @@ import { MediaServerModel } from "./Models/media-server-model";
 
 export class Meeting {
     public activeUser: MeetingUserModel;
-    public conusmaWorker: ConusmaWorker;
-
+    public meetingWorker: any;
     public mediaServers: MediaServer[] = new Array();
     public connections: Connection[] = new Array();
 
@@ -36,27 +34,25 @@ export class Meeting {
             if (this.audioInputs.length > 0)
                 this.activeMicrophone = this.audioInputs[0];
         });
-        
-        this.conusmaWorker = new ConusmaWorker(this.appService, this.activeUser);
     }
 
-    public open() {
+    public open(workerUrl:string, apiUrl:string) {
         try {
             this.isClosedRequestRecieved = false;
-            this.conusmaWorker.start();
-            this.conusmaWorker.meetingWorkerEvent.on('meetingUsers', () => {
-                console.log("Meeting users updated.");
-            });
-            this.conusmaWorker.meetingWorkerEvent.on('chatUpdates', () => {
-                console.log("Chat updated.");
-            });
-            this.conusmaWorker.meetingWorkerEvent.on('meetingUpdate', () => {
-                console.log("Meeting updated.");
-            });
+            this.startMeetingWorker(workerUrl, apiUrl);
         } catch (error) {
             throw new ConusmaException("open", "cannot open, please check exception", error);
 
         }
+    }
+    private startMeetingWorker(workerUrl:string, apiUrl:string)
+    {
+        if(this.meetingWorker != null)
+        {
+            this.meetingWorker.terminate();
+        }
+        this.meetingWorker = new Worker(workerUrl);
+        this.meetingWorker.postMessage({"MeetingUserId":this.activeUser.Id,"Token":this.appService.getJwtToken(),"url":apiUrl+"/Live/GetMeetingEvents","IAmHereUrl":apiUrl+"/Live/IAmHere"});
     }
 
     public async close(sendCloseRequest: boolean = false) {
@@ -66,8 +62,8 @@ export class Meeting {
                 await this.appService.liveClose(closeData);
             }
             this.isClosedRequestRecieved = true;
-            if (this.conusmaWorker != null) {
-                this.conusmaWorker.terminate();
+            if (this.meetingWorker != null) {
+                this.meetingWorker.terminate();
             }
             for (let item of this.connections) {
                 if (!item.isProducer)

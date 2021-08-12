@@ -37,7 +37,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -49,7 +49,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -61,7 +61,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     if (!response.ok) {
@@ -76,7 +76,7 @@ export class AppService {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({
         meetingId: meetingId,
@@ -225,7 +225,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' +  this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -253,7 +253,7 @@ public getJwtToken():string {
         headers: {
           accept: 'application/json',
           'content-type': 'application/json',
-          Token: Token
+          'Authorization': 'Bearer ' + Token
         }
       });
       if (!response.ok) {
@@ -270,7 +270,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     if (!response.ok) {
@@ -285,7 +285,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -298,7 +298,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -311,7 +311,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -323,7 +323,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({
         id: id
@@ -338,7 +338,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({
         fileName: fileName,
@@ -355,7 +355,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -367,7 +367,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({
         logs: logs
@@ -407,7 +407,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({
         log: log
@@ -421,7 +421,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' +  this.getJwtToken()
       }
     });
     return await response.json();
@@ -433,7 +433,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -445,7 +445,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -458,7 +458,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -471,7 +471,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -484,7 +484,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({
         meetingId: meetingId,
@@ -503,7 +503,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({
         meetingId: meetingId,
@@ -523,7 +523,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     if (!response.ok) {
@@ -538,7 +538,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -549,7 +549,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -561,7 +561,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -573,7 +573,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       }
     });
     return await response.json();
@@ -585,7 +585,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -598,7 +598,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -614,7 +614,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -630,7 +630,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -643,7 +643,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -656,7 +656,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -669,7 +669,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -682,7 +682,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -695,7 +695,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -708,7 +708,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -721,7 +721,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -734,7 +734,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -747,7 +747,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -760,7 +760,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -773,7 +773,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -786,7 +786,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -799,7 +799,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -812,7 +812,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -825,7 +825,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        Token: this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify(data)
     });
@@ -837,7 +837,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({meetingUserId:_meetingUserId})
     });
@@ -852,7 +852,7 @@ public getJwtToken():string {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        'Token': this.getJwtToken()
+        'Authorization': 'Bearer ' + this.getJwtToken()
       },
       body: JSON.stringify({meetingUserId:_meetingUserId})
     });

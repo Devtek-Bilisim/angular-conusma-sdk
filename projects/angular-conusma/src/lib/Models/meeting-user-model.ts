@@ -19,7 +19,7 @@ export class MeetingUserModel {
     public MeetingId:number = 0;
     public MediaServerId:number = 0;
     public Status:number = 4;
-    public UserType:number = 1;
+    public User_Type:number = 1;
     public Id:string = "";
     public AddedDate:string = "";
     public ModifiedDate:string = "";

@@ -14,7 +14,7 @@ export class UserModel {
     public Photo:string = "";
     public GooglePhoto:string = "";
     public TimeZone:string = "";
-    public UserType:string = "User";
+    public User_Type:string = "1";
     public LicenseFeaturesId:number = 1;
     public Id:string = "";
     public AddedDate:string = "";

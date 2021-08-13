@@ -120,7 +120,7 @@ public getJwtToken() {
    if(userData != null)
    {
      var user = JSON.parse(userData);
-     if(user.UserType == "User")
+     if(user.User_Type == "1")
      {
        return true;
      }

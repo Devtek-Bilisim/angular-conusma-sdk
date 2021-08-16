@@ -71,6 +71,7 @@ export class Meeting {
                 else {
                     item.mediaServer.closeProducer();
                 }
+                item.stream.getTracks().forEach((track:MediaStreamTrack) => { track.stop(); });
             }
             for (var i = 0; i < this.connections.length; i++) {
                 if (this.connections[i].mediaServer.socket && this.connections[i].mediaServer.socket.connected) {
@@ -137,7 +138,18 @@ export class Meeting {
             throw new ConusmaException("switchSpeaker", "Cannot switch speaker", error);
         }
     }
-    
+    public async deviceKindExists(kind:MediaDeviceKind) {
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            var devicelist = await navigator.mediaDevices.enumerateDevices();
+            for (var i = 0; i !== devicelist.length; ++i) {
+                var deviceInfo = devicelist[i];
+                if (deviceInfo.kind === kind) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     public async getDevices() {
         if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
             await navigator.mediaDevices.enumerateDevices()

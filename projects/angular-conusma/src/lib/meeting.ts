@@ -285,6 +285,7 @@ export class Meeting {
             }
  
             const constraints: any = {
+                audio: false,
                 video: videoConstraints
             };
 
@@ -388,7 +389,9 @@ export class Meeting {
     public async produce(localStream: MediaStream) {
         var connection = await this.createConnectionForProducer();
         connection.stream = localStream;
-        await connection.mediaServer.produce(this.activeUser, localStream);
+        if (localStream != null) {
+            await connection.mediaServer.produce(this.activeUser, localStream);
+        } 
         return connection;
     }
 

@@ -7,6 +7,7 @@ import { MediaServer } from "./media-server";
 import { Connection } from "./connection";
 import { MeetingModel } from "./Models/meeting-model";
 import { MediaServerModel } from "./Models/media-server-model";
+import { connect } from "http2";
 
 export class Meeting {
     public activeUser: MeetingUserModel;
@@ -430,6 +431,8 @@ export class Meeting {
         try {
             connection.stream = await connection.mediaServer.consume(user);
         } catch(e) {
+            connection.user.Camera = false;
+            connection.user.Mic = false;
             // TODO: Log error
         }
         return connection;

@@ -427,7 +427,11 @@ export class Meeting {
 
     public async consume(user: MeetingUserModel) {
         var connection = await this.createConnectionForConsumer(user);
-        connection.stream = await connection.mediaServer.consume(user);
+        try {
+            connection.stream = await connection.mediaServer.consume(user);
+        } catch(e) {
+            // TODO: Log error
+        }
         return connection;
     }
     public async closeConsumer(connection: Connection) {

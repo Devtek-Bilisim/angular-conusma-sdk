@@ -4,9 +4,12 @@ import { ConusmaException } from "./Exceptions/conusma-exception";
 export class Connection {
     user:MeetingUserModel;
     mediaServer:MediaServer;
+    transport:any;
     stream:MediaStream;
+    
     isProducer:boolean = false;
     
+    public isIntersecting:boolean = false;
     public isAudioActive = true;
     public isVideoActive = true;
 

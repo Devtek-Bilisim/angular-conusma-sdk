@@ -154,7 +154,7 @@ export class MediaServer {
         try {
             var result = await this.createConsumerTransport(this, producerUser);
             this.consumerTransports.push(result);
-            return <MediaStream>result.RemoteStream;
+            return result;
         } catch (error) {
             throw new ConusmaException("consume", producerUser.Id + "The stream of the user is currently not captured. User connection information is out of date.", error);
         }

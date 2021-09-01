@@ -58,11 +58,6 @@ export class Meeting {
 
     public async close(sendCloseRequest: boolean = false) {
         try {
-            if (sendCloseRequest) {
-                var closeData = { 'MeetingUserId': this.activeUser.Id };
-                await this.appService.liveClose(closeData);
-            }
-            this.isClosedRequestRecieved = true;
             if (this.meetingWorker != null) {
                 this.meetingWorker.terminate();
             }
@@ -79,6 +74,12 @@ export class Meeting {
                     this.connections[i].mediaServer.socket.close();
                 }
                 this.removeItemOnce(this.connections, i);
+            }
+            this.isClosedRequestRecieved = true;
+            
+            if (sendCloseRequest) {
+                var closeData = { 'MeetingUserId': this.activeUser.Id };
+                await this.appService.liveClose(closeData);
             }
         } catch (error) {
             throw new ConusmaException("close", "cannot close, please check exception", error);

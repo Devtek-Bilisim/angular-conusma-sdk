@@ -132,7 +132,7 @@ export class MediaServer {
         }
     }
 
-    private async signal(type: string, data: any = null, mediaServerSocket: any): Promise<any> {
+    public async signal(type: string, data: any = null, mediaServerSocket: any): Promise<any> {
         if (mediaServerSocket != null) {
             return new Promise((resolve, reject) => {
                 mediaServerSocket.emit(type, data, (err: any, response: any) => {

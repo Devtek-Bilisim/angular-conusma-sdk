@@ -5,6 +5,7 @@ export class Connection {
     user:MeetingUserModel;
     mediaServer:MediaServer;
     transport:any;
+    
     stream:MediaStream;
     
     isProducer:boolean = false;

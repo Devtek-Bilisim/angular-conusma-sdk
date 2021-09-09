@@ -11,6 +11,9 @@ export class Connection {
     isProducer:boolean = false;
     
     public isIntersecting:boolean = false;
+    public applauseEmoji: any;
+    public thumbEmoji: any;
+    
     public isAudioActive = true;
     public isVideoActive = true;
 

@@ -25,6 +25,7 @@ export class Meeting {
 
     public activeCamera:any;
     public activeMicrophone:any;
+    public activeConnection:any;
     
     constructor(activeUser: MeetingUserModel, appService: AppService) {
         this.appService = appService;
@@ -218,22 +219,32 @@ export class Meeting {
             const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
             if (newStream != null) {
                 if (newStream.getVideoTracks().length > 0) {
+                    this.activeUser.Camera = true;
                     this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
                 } else {
+                    this.activeUser.Camera = false;
                     this.activeUser.ActiveCamera = false;
                 }
     
                 if (newStream.getAudioTracks().length > 0) {
+                    this.activeUser.Mic = true;
                     this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
                 } else {
+                    this.activeUser.Mic = false;
                     this.activeUser.ActiveMic = false;
                 }
             } else {
+                this.activeUser.Camera = false;
                 this.activeUser.ActiveCamera = false;
+                this.activeUser.Mic = false;
                 this.activeUser.ActiveMic = false;
             }
             return newStream;
         } catch (error) {
+            this.activeUser.Camera = false;
+            this.activeUser.ActiveCamera = false;
+            this.activeUser.Mic = false;
+            this.activeUser.ActiveMic = false;
             throw new ConusmaException("enableAudioVideo", "can not read camera and microphone, please check exception.", error);
         }
         
@@ -253,15 +264,20 @@ export class Meeting {
             const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
             if (newStream != null) {
                 if (newStream.getAudioTracks().length > 0) {
+                    this.activeUser.Mic = true;
                     this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
                 } else {
+                    this.activeUser.Mic = false;
                     this.activeUser.ActiveMic = false;
                 }
             } else {
+                this.activeUser.Mic = false;
                 this.activeUser.ActiveMic = false;
             }
             return newStream;
         } catch (error) {
+            this.activeUser.Mic = false;
+            this.activeUser.ActiveMic = false;
             throw new ConusmaException("enableAudio", "can not read microphone, please check exception.", error);
         }
     }
@@ -294,16 +310,20 @@ export class Meeting {
             const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
             if (newStream != null) {
                 if (newStream.getVideoTracks().length > 0) {
+                    this.activeUser.Camera = true;
                     this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
                 } else {
+                    this.activeUser.Camera = false;
                     this.activeUser.ActiveCamera = false;
                 }
-
             } else {
+                this.activeUser.Camera = false;
                 this.activeUser.ActiveCamera = false;
             }
             return newStream;
         } catch (error) {
+            this.activeUser.Camera = false;
+            this.activeUser.ActiveCamera = false;
             throw new ConusmaException("enableVideo", "can not read camera, please check exception.", error);
         } 
     }
@@ -389,13 +409,13 @@ export class Meeting {
     }
 
     public async produce(localStream: MediaStream) {
-        var connection = await this.createConnectionForProducer();
-        connection.stream = localStream;
+        this.activeConnection = await this.createConnectionForProducer();
+        this.activeConnection.stream = localStream;
         if (localStream != null) {
-            await connection.mediaServer.produce(this.activeUser, localStream);
-            connection.transport = connection.mediaServer.producerTransport;
+            await this.activeConnection.mediaServer.produce(this.activeUser, localStream);
+            this.activeConnection.transport = this.activeConnection.mediaServer.producerTransport;
         } 
-        return connection;
+        return this.activeConnection;
     }
 
     public async closeProducer() {

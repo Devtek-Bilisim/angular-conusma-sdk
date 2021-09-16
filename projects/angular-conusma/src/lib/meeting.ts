@@ -8,10 +8,12 @@ import { Connection } from "./connection";
 import { MeetingModel } from "./Models/meeting-model";
 import { MediaServerModel } from "./Models/media-server-model";
 import { connect } from "http2";
+import { WorkerDataModel } from "./Component/worker-data-model";
+import * as EventEmitter from "events";
 
 export class Meeting {
     public activeUser: MeetingUserModel;
-    public meetingWorker: any;
+    public meetingWorker: Worker = null;
     public mediaServers: MediaServer[] = new Array();
     public connections: Connection[] = new Array();
 
@@ -23,14 +25,17 @@ export class Meeting {
     public audioOutputs: MediaDeviceInfo[] = [];
     public videoInputs: MediaDeviceInfo[] = [];
 
-    public activeCamera:any;
-    public activeMicrophone:any;
-    public activeConnection:any;
-    
-    private configuration = {iceServers: [{urls: 'stun:stun.l.google.com:19302'}]};
-    public pc = new RTCPeerConnection(this.configuration);
-    public remoteStream:any;
+    public activeCamera: any;
+    public activeMicrophone: any;
+    public activeConnection: any;
 
+    private configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+    public pc = new RTCPeerConnection(this.configuration);
+    public remoteStream: any;
+
+
+    private workerModel: WorkerDataModel = new WorkerDataModel();
+    public meetingEvents: EventEmitter = new EventEmitter();
     constructor(activeUser: MeetingUserModel, appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
@@ -42,23 +47,37 @@ export class Meeting {
         });
     }
 
-    public open(workerUrl:string, apiUrl:string) {
+    public open(apiUrl: string) {
         try {
             this.isClosedRequestRecieved = false;
-            this.startMeetingWorker(workerUrl, apiUrl);
-        } catch (error) {
+            this.startMeetingWorker(apiUrl);
+        } catch (error: any) {
+            console.log(error);
             throw new ConusmaException("open", "cannot open, please check exception", error);
 
         }
     }
-    private startMeetingWorker(workerUrl:string, apiUrl:string)
-    {
-        if(this.meetingWorker != null)
-        {
+    private startMeetingWorker(apiUrl: string) {
+        if (this.meetingWorker != null) {
             this.meetingWorker.terminate();
         }
-        this.meetingWorker = new Worker(workerUrl);
-        this.meetingWorker.postMessage({"MeetingUserId":this.activeUser.Id,"Token":this.appService.getJwtToken(),"url":apiUrl+"/Live/GetMeetingEvents","IAmHereUrl":apiUrl+"/Live/IAmHere"});
+        this.meetingWorker = new Worker("./assets/workers/meetingworker.js");
+        this.meetingWorker.postMessage({ "MeetingUserId": this.activeUser.Id, "Token": this.appService.getJwtToken(), "url": apiUrl + "/Live/GetMeetingEvents", "IAmHereUrl": apiUrl + "/Live/IAmHere" });
+        this.meetingWorker.onmessage = (event: any) => {
+            var eventChange = JSON.parse(event.data);
+            if (this.workerModel.MeetingUsers != eventChange.MeetingUsers) {
+                this.meetingEvents.emit("meetingUser");
+                this.workerModel.MeetingUsers = eventChange.MeetingUsers;
+            }
+            if (this.workerModel.ChatUpdates != eventChange.ChatUpdates) {
+                this.meetingEvents.emit("chat");
+                this.workerModel.ChatUpdates = eventChange.ChatUpdates;
+            }
+            if (this.workerModel.MeetingUpdate != eventChange.MeetingUpdate) {
+                this.meetingEvents.emit("meeting");
+                this.workerModel.MeetingUpdate = eventChange.MeetingUpdate;
+            }
+        };
     }
 
     public async close(sendCloseRequest: boolean = false) {
@@ -72,7 +91,7 @@ export class Meeting {
                 else {
                     item.mediaServer.closeProducer();
                 }
-                item.stream.getTracks().forEach((track:MediaStreamTrack) => { track.stop(); });
+                item.stream.getTracks().forEach((track: MediaStreamTrack) => { track.stop(); });
             }
             for (var i = 0; i < this.connections.length; i++) {
                 if (this.connections[i].mediaServer.socket && this.connections[i].mediaServer.socket.connected) {
@@ -81,12 +100,12 @@ export class Meeting {
                 this.removeItemOnce(this.connections, i);
             }
             this.isClosedRequestRecieved = true;
-            
+
             if (sendCloseRequest) {
                 var closeData = { 'MeetingUserId': this.activeUser.Id };
                 await this.appService.liveClose(closeData);
             }
-        } catch (error) {
+        } catch (error: any) {
             throw new ConusmaException("close", "cannot close, please check exception", error);
         }
     }
@@ -138,14 +157,14 @@ export class Meeting {
             console.error("no socket connection " + type);
         }
     }
-    public switchSpeaker(speaker:MediaDeviceInfo, videoElement:any) {
+    public switchSpeaker(speaker: MediaDeviceInfo, videoElement: any) {
         try {
-            videoElement.setSinkId(speaker.deviceId);     
-        } catch (error) {
+            videoElement.setSinkId(speaker.deviceId);
+        } catch (error: any) {
             throw new ConusmaException("switchSpeaker", "Cannot switch speaker", error);
         }
     }
-    public async deviceKindExists(kind:MediaDeviceKind) {
+    public async deviceKindExists(kind: MediaDeviceKind) {
         if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
             var devicelist = await navigator.mediaDevices.enumerateDevices();
             for (var i = 0; i !== devicelist.length; ++i) {
@@ -178,7 +197,7 @@ export class Meeting {
                             this.activeUser.Camera = true;
                         }
                     }
-               
+
                 });
         } else {
             this.activeUser.Mic = false;
@@ -187,10 +206,10 @@ export class Meeting {
             this.activeUser.ActiveCamera = false;
         }
     }
-    public switchCamera(camera:MediaDeviceInfo) {
+    public switchCamera(camera: MediaDeviceInfo) {
         this.activeCamera = camera;
     }
-    public switchMicrophone(microphone:MediaDeviceInfo) {
+    public switchMicrophone(microphone: MediaDeviceInfo) {
         this.activeMicrophone = microphone;
     }
     public async enableAudioVideo() {
@@ -209,7 +228,7 @@ export class Meeting {
                 "frameRate": "10"
             };
             var audioConstraints: any = { 'echoCancellation': true };
-        
+
             if (this.activeCamera) {
                 videoConstraints.deviceId = { exact: this.activeCamera.deviceId };
             }
@@ -229,7 +248,7 @@ export class Meeting {
                     this.activeUser.Camera = false;
                     this.activeUser.ActiveCamera = false;
                 }
-    
+
                 if (newStream.getAudioTracks().length > 0) {
                     this.activeUser.Mic = true;
                     this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
@@ -244,20 +263,20 @@ export class Meeting {
                 this.activeUser.ActiveMic = false;
             }
             return newStream;
-        } catch (error) {
+        } catch (error: any) {
             this.activeUser.Camera = false;
             this.activeUser.ActiveCamera = false;
             this.activeUser.Mic = false;
             this.activeUser.ActiveMic = false;
             throw new ConusmaException("enableAudioVideo", "can not read camera and microphone, please check exception.", error);
         }
-        
+
     }
 
     public async enableAudio() {
         try {
             var audioConstraints: any = { 'echoCancellation': true };
-        
+
             if (this.activeMicrophone) {
                 audioConstraints.deviceId = { exact: this.activeMicrophone.deviceId };
             }
@@ -279,7 +298,7 @@ export class Meeting {
                 this.activeUser.ActiveMic = false;
             }
             return newStream;
-        } catch (error) {
+        } catch (error: any) {
             this.activeUser.Mic = false;
             this.activeUser.ActiveMic = false;
             throw new ConusmaException("enableAudio", "can not read microphone, please check exception.", error);
@@ -301,11 +320,11 @@ export class Meeting {
                 },
                 "frameRate": "10"
             };
-        
+
             if (this.activeCamera) {
                 videoConstraints.deviceId = { exact: this.activeCamera.deviceId };
             }
- 
+
             const constraints: any = {
                 audio: false,
                 video: videoConstraints
@@ -325,11 +344,11 @@ export class Meeting {
                 this.activeUser.ActiveCamera = false;
             }
             return newStream;
-        } catch (error) {
+        } catch (error: any) {
             this.activeUser.Camera = false;
             this.activeUser.ActiveCamera = false;
             throw new ConusmaException("enableVideo", "can not read camera, please check exception.", error);
-        } 
+        }
     }
 
     public async enableScreenShare() {
@@ -346,8 +365,8 @@ export class Meeting {
             }
             const newStream: MediaStream = await (navigator as any).mediaDevices.getDisplayMedia(displayMediaOptions);
             return newStream;
-            
-        } catch (error) {
+
+        } catch (error: any) {
             throw new ConusmaException("enableScreenShare", "can not read screen, please check exception.", error);
         }
     }
@@ -356,7 +375,7 @@ export class Meeting {
         try {
             await this.appService.connectMeeting(this.activeUser);
             console.log("User connected to the meeting.");
-        } catch (error) {
+        } catch (error: any) {
             throw new ConusmaException("connectMeeting", "can not connect meeting, please check exception", error);
         }
 
@@ -365,7 +384,7 @@ export class Meeting {
         try {
             return await this.appService.isApproved(this.activeUser.Id);
 
-        } catch (error) {
+        } catch (error: any) {
             throw new ConusmaException("isApproved", "user is not approved, please check exception ", error);
         }
     }
@@ -387,7 +406,7 @@ export class Meeting {
                 return [];
             }
 
-        } catch (error) {
+        } catch (error: any) {
             throw new ConusmaException("getAllUsers", "Unable to fetch user list, please check detail exception");
         }
 
@@ -407,7 +426,7 @@ export class Meeting {
             } else {
                 return [];
             }
-        } catch (error) {
+        } catch (error: any) {
             throw new ConusmaException("getProducerUsers", "Unable to fetch producer user list, please check detail exception");
         }
     }
@@ -445,7 +464,7 @@ export class Meeting {
 
             await this.activeConnection.mediaServer.produce(this.activeUser, localStream);
             this.activeConnection.transport = this.activeConnection.mediaServer.producerTransport;
-        } 
+        }
         return this.activeConnection;
     }
 
@@ -462,13 +481,12 @@ export class Meeting {
                 var index = this.connections.findIndex(us => us.user.Id == this.activeUser.Id);
                 this.removeItemOnce(this.connections, index);
             }
-            else
-            {
-                throw new ConusmaException("closeProducer","producer connection not found");
+            else {
+                throw new ConusmaException("closeProducer", "producer connection not found");
 
             }
-        } catch (error) {
-            throw new ConusmaException("closeProducer"," please check detail exception",error);
+        } catch (error: any) {
+            throw new ConusmaException("closeProducer", " please check detail exception", error);
         }
     }
 
@@ -484,7 +502,7 @@ export class Meeting {
         try {
             connection.transport = await connection.mediaServer.consume(user);
             connection.stream = connection.transport.RemoteStream;
-        } catch(e) {
+        } catch (e) {
             connection.user.Camera = false;
             connection.user.Mic = false;
             // TODO: Log error

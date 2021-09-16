@@ -27,6 +27,10 @@ export class Meeting {
     public activeMicrophone:any;
     public activeConnection:any;
     
+    private configuration = {iceServers: [{urls: 'stun:stun.l.google.com:19302'}]};
+    public pc = new RTCPeerConnection(this.configuration);
+    public remoteStream:any;
+
     constructor(activeUser: MeetingUserModel, appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
@@ -412,6 +416,33 @@ export class Meeting {
         this.activeConnection = await this.createConnectionForProducer();
         this.activeConnection.stream = localStream;
         if (localStream != null) {
+            /*// send any ice candidates to the other peer
+            // this.pc.onicecandidate = ({candidate}) => this.appService.sendMeetingEvent("candidate", {candidate});
+
+            // let the "negotiationneeded" event trigger offer generation
+            this.pc.onnegotiationneeded = async () => {
+                try {
+                    await this.pc.setLocalDescription();
+                    // send the offer to the other peer
+                    this.appService.sendMeetingEvent("description", {description: this.pc.localDescription});
+                } catch (err) {
+                    console.error(err);
+                }
+            };
+
+            this.pc.ontrack = ({track, streams}) => {
+                // once media for a remote track arrives, show it in the remote video element
+                track.onunmute = () => {
+                  // don't set remoteStream again if it is already set.
+                  if (this.remoteStream) return;
+                   this.remoteStream = streams[0];
+                };
+              };
+            
+            for (const track of localStream.getTracks()) {
+                this.pc.addTrack(track, localStream);
+            }*/
+
             await this.activeConnection.mediaServer.produce(this.activeUser, localStream);
             this.activeConnection.transport = this.activeConnection.mediaServer.producerTransport;
         } 

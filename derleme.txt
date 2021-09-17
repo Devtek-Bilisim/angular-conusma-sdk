@@ -1,0 +1,7 @@
+ng build angular-conusma --prod
+cd dist/angular-conusma
+npm pack
+
+daha sonra burada oluşan angular-conusma-0.0.3.tgz örnek paketi web projesine kopylayıp
+npm uninstall angular-conusma
+npm install ./angular-conusma-0.0.3.tgz yaparak localde derliyoruz

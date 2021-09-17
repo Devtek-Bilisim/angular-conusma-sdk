@@ -47,7 +47,7 @@ export class MediaServer {
             user.MediaServerId = this.id;
             this.appService.connectMeeting(user);
 
-        } catch (error) {
+        } catch (error:any) {
             throw new ConusmaException("produce", "can not send stream, please check exception", error);
         }
     }
@@ -89,7 +89,7 @@ export class MediaServer {
                     }, this.socket);
                     callback(id)
                 });
-        } catch (error) {
+        } catch (error:any) {
             throw new ConusmaException("createProducerTransport", "createProducerTransport error", error);
         }
     }
@@ -127,7 +127,7 @@ export class MediaServer {
                   await this.mediaServerClient.AudioProducer.rtpSender.setParameters(aparameters);*/
             }
 
-        } catch (error) {
+        } catch (error:any) {
             console.error("createProducer error. " + error);
         }
     }
@@ -155,7 +155,7 @@ export class MediaServer {
             var result = await this.createConsumerTransport(this, producerUser);
             this.consumerTransports.push(result);
             return result;
-        } catch (error) {
+        } catch (error:any) {
             throw new ConusmaException("consume", producerUser.Id + "The stream of the user is currently not captured. User connection information is out of date.", error);
         }
     }
@@ -256,7 +256,7 @@ export class MediaServer {
                     consumerTransport.RemoteStream.removeTrack(consumerTransport.audioConsumer.track);
                 }
             }
-        } catch (error) {
+        } catch (error:any) {
 
         }
     }
@@ -273,7 +273,7 @@ export class MediaServer {
                 index++;
             };
             this.removeItemOnce(this.consumerTransports, index);
-        } catch (error) {
+        } catch (error:any) {
             throw new ConusmaException("closeConsumer", "consumer cannot be closed, please check exception", error);
         }
 
@@ -292,7 +292,7 @@ export class MediaServer {
                 this.producerTransport.close(); 
                 await this.signal('produceclose',{'kind':'video'},this.socket);
                 await this.signal('produceclose',{'kind':'audio'},this.socket);
-        } catch (error) {
+        } catch (error:any) {
             throw new ConusmaException("closeProducer", "producer cannot be closed, please check exception ", error);
         }
 

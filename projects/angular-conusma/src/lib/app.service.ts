@@ -5,15 +5,11 @@ export class AppService {
   private apiUrl: string = "";
   private deviceId: string = "";
   private version: string = "1.0.0";
-  constructor() {
-  }
-  public setParameters(appId:string, parameters: { apiUrl: string, deviceId: string, version: string }) {
-    this.appId = appId;
+  constructor( parameters: { apiUrl: string, deviceId: string, version: string }) {
     this.apiUrl = parameters.apiUrl;
     this.deviceId = parameters.deviceId;
     this.version = parameters.version;
   }
-  
   public async createUserWithDeviceId() {
     var response = await fetch(this.apiUrl + "/User/AddUserWithAppCode", {
       method: 'POST',
@@ -116,9 +112,6 @@ export class AppService {
       localStorage.removeItem("PublicToken");
       localStorage.removeItem("PublicUserData");
     }
-}
-public setPublicToken(publicToken:string) {
-  localStorage.setItem("PublicToken", publicToken);
 }
 
 public getJwtToken():string {

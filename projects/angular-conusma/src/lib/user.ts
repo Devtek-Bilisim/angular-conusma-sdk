@@ -10,8 +10,7 @@ import { UserModel } from "./Models/user-model";
 
 export class User {
     meetingUser$: Observable<MeetingUserModel>;
-    constructor(_appService:AppService, private store: Store<{ meetingUser: MeetingUserModel }>) {
-      this.meetingUser$ = store.select('meetingUser');
+    constructor(_appService:AppService) {
       this.appService = _appService;
     }
     private appService:AppService ;
@@ -20,17 +19,13 @@ export class User {
       var result = await this.appService.getProfile();
       this.userInfo = result;
     }
-    public async create()
-    {
-        var result = await this.appService.createUserWithDeviceId();
-        this.userInfo = result;
-    }
+   
     public async createMeeting()
     {
       try {
         var meeting:Meeting = await this.appService.createMeeting();
         return meeting;
-      } catch (error) {
+      } catch (error:any) {
         throw new ConusmaException("createMeeting","Meeting cannot be created.", error);
       }
        
@@ -40,7 +35,7 @@ export class User {
         try {
             var meetings:Array<MeetingModel> = await this.appService.getMeetings();
             return meetings;
-          } catch (error) {
+          } catch (error:any) {
             throw new ConusmaException("getMeetings","Meeting list cannot be received.", error);
           }
     }
@@ -50,7 +45,7 @@ export class User {
             var meetings:Array<MeetingModel> = await this.appService.getMeetings();
              var profileMeeting:MeetingModel = <MeetingModel>meetings.find(us => us.ProfileMeeting); 
             return profileMeeting;
-          } catch (error) {
+          } catch (error:any) {
             throw new ConusmaException("getProfileMeeting", "Profile Meeting cannot be received.", error);
           }
     }
@@ -60,9 +55,8 @@ export class User {
             var result = await this.appService.joinMeeting(meeting.MeetingId,meeting.Password,meetingName);
             var meetingUser:MeetingUserModel = result;
             var activeMeeting = new Meeting(meetingUser, this.appService);
-            this.store.dispatch(updateMeetingUser({ meetingUser: meetingUser }));
             return activeMeeting;
-          } catch (error) {
+          } catch (error:any) {
             throw new ConusmaException("joinMeeting", "Failed to join the meeting", error);
           }
     }

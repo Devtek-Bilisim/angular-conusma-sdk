@@ -7,7 +7,6 @@ import { MediaServer } from "./media-server";
 import { Connection } from "./connection";
 import { MeetingModel } from "./Models/meeting-model";
 import { MediaServerModel } from "./Models/media-server-model";
-import { connect } from "http2";
 import { WorkerDataModel } from "./Component/worker-data-model";
 import * as EventEmitter from "events";
 
@@ -24,14 +23,14 @@ export class Meeting {
     public audioInputs: MediaDeviceInfo[] = [];
     public audioOutputs: MediaDeviceInfo[] = [];
     public videoInputs: MediaDeviceInfo[] = [];
+    public localStream: MediaStream = null;
 
-    public activeCamera: any;
-    public activeMicrophone: any;
-    public activeConnection: any;
+    public activeConnection: Connection;
 
-    private configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-    public pc = new RTCPeerConnection(this.configuration);
-    public remoteStream: any;
+    /* Peer to Peer 
+      private configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+      public pc = new RTCPeerConnection(this.configuration);
+      public remoteStream: any;*/
 
 
     private workerModel: WorkerDataModel = new WorkerDataModel();
@@ -39,12 +38,10 @@ export class Meeting {
     constructor(activeUser: MeetingUserModel, appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
-        this.getDevices().then(() => {
-            if (this.videoInputs.length > 0)
-                this.activeCamera = this.videoInputs[0];
-            if (this.audioInputs.length > 0)
-                this.activeMicrophone = this.audioInputs[0];
-        });
+        this.activeUser.Camera = false;
+        this.activeUser.Mic = false;
+        this.activeUser.ActiveCamera = false;
+        this.activeUser.ActiveMic = false;
     }
 
     public open(apiUrl: string) {
@@ -176,43 +173,36 @@ export class Meeting {
         }
         return false;
     }
-    public async getDevices() {
+    public async updateDeviceList() {
+        this.audioInputs = [];
+        this.audioOutputs = [];
+        this.videoInputs = [];
         if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
             await navigator.mediaDevices.enumerateDevices()
                 .then((deviceInfos) => {
-                    this.audioInputs = [];
-                    this.audioOutputs = [];
-                    this.videoInputs = [];
                     for (var i = 0; i !== deviceInfos.length; ++i) {
                         var deviceInfo = deviceInfos[i];
                         var option = document.createElement('option');
                         option.value = deviceInfo.deviceId;
                         if (deviceInfo.kind === 'audioinput') {
                             this.audioInputs.push(deviceInfo);
-                            this.activeUser.Mic = true;
                         } else if (deviceInfo.kind === 'audiooutput') {
                             this.audioOutputs.push(deviceInfo);
                         } else if (deviceInfo.kind === 'videoinput') {
                             this.videoInputs.push(deviceInfo)
-                            this.activeUser.Camera = true;
                         }
                     }
 
                 });
-        } else {
-            this.activeUser.Mic = false;
-            this.activeUser.ActiveMic = false;
-            this.activeUser.Camera = false;
-            this.activeUser.ActiveCamera = false;
-        }
+        } 
     }
-    public switchCamera(camera: MediaDeviceInfo) {
-        this.activeCamera = camera;
+    public async switchCamera(camera: MediaDeviceInfo) {
+        await this.enableVideo(camera);
     }
-    public switchMicrophone(microphone: MediaDeviceInfo) {
-        this.activeMicrophone = microphone;
+    public async switchMicrophone(microphone: MediaDeviceInfo) {
+        await this.enableAudio(microphone);
     }
-    public async enableAudioVideo() {
+    public async enableAudioVideo(camera: MediaDeviceInfo = null, microphone: MediaDeviceInfo = null) {
         try {
             var videoConstraints: any = {
                 "width": {
@@ -229,40 +219,32 @@ export class Meeting {
             };
             var audioConstraints: any = { 'echoCancellation': true };
 
-            if (this.activeCamera) {
-                videoConstraints.deviceId = { exact: this.activeCamera.deviceId };
+            if (camera != null) {
+                videoConstraints.deviceId = { exact: camera.deviceId };
             }
-            if (this.activeMicrophone) {
-                audioConstraints.deviceId = { exact: this.activeMicrophone.deviceId };
+            if (microphone != null) {
+                audioConstraints.deviceId = { exact: microphone.deviceId };
             }
             const constraints: any = {
                 video: videoConstraints,
                 audio: audioConstraints
             };
             const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-            if (newStream != null) {
-                if (newStream.getVideoTracks().length > 0) {
-                    this.activeUser.Camera = true;
-                    this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
-                } else {
-                    this.activeUser.Camera = false;
-                    this.activeUser.ActiveCamera = false;
-                }
-
-                if (newStream.getAudioTracks().length > 0) {
-                    this.activeUser.Mic = true;
-                    this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
-                } else {
-                    this.activeUser.Mic = false;
-                    this.activeUser.ActiveMic = false;
-                }
-            } else {
-                this.activeUser.Camera = false;
-                this.activeUser.ActiveCamera = false;
-                this.activeUser.Mic = false;
-                this.activeUser.ActiveMic = false;
+            if (newStream == null) {
+                throw new Error("stream is null");
             }
-            return newStream;
+            if (newStream.getAudioTracks().length < 1) {
+                throw new Error("audio track is null");
+            }
+            if (newStream.getVideoTracks().length < 1) {
+                throw new Error("video track is null");
+            }
+            this.activeUser.Camera = true;
+            this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
+            this.activeUser.Mic = true;
+            this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
+            this.localStream = newStream;
+            await this.updateStreamProducerTrack(true, true, this.localStream);
         } catch (error: any) {
             this.activeUser.Camera = false;
             this.activeUser.ActiveCamera = false;
@@ -273,31 +255,36 @@ export class Meeting {
 
     }
 
-    public async enableAudio() {
+    public async enableAudio(microphone: MediaDeviceInfo = null) {
         try {
             var audioConstraints: any = { 'echoCancellation': true };
 
-            if (this.activeMicrophone) {
-                audioConstraints.deviceId = { exact: this.activeMicrophone.deviceId };
+            if (microphone != null) {
+                audioConstraints.deviceId = { exact: microphone.deviceId };
             }
             const constraints: any = {
                 video: false,
                 audio: audioConstraints
             };
             const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-            if (newStream != null) {
-                if (newStream.getAudioTracks().length > 0) {
-                    this.activeUser.Mic = true;
-                    this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
-                } else {
-                    this.activeUser.Mic = false;
-                    this.activeUser.ActiveMic = false;
-                }
-            } else {
-                this.activeUser.Mic = false;
-                this.activeUser.ActiveMic = false;
+            if (newStream == null || newStream.getAudioTracks().length < 1) {
+                throw new Error("audio stream is null");
             }
-            return newStream;
+            this.activeUser.Mic = true;
+            this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
+            if (this.localStream != null) {
+                if (this.localStream.getAudioTracks().length > 0) {
+                    this.localStream.removeTrack(this.localStream.getAudioTracks()[0]);
+                    this.localStream.addTrack(newStream.getAudioTracks()[0]);
+                }
+                else {
+                    this.localStream.addTrack(newStream.getAudioTracks()[0]);
+                }
+            }
+            else {
+                this.localStream = newStream;
+            }
+            await this.updateStreamProducerTrack(false, true, this.localStream);
         } catch (error: any) {
             this.activeUser.Mic = false;
             this.activeUser.ActiveMic = false;
@@ -305,7 +292,7 @@ export class Meeting {
         }
     }
 
-    public async enableVideo() {
+    public async enableVideo(camera: MediaDeviceInfo = null) {
         try {
             var videoConstraints: any = {
                 "width": {
@@ -321,8 +308,8 @@ export class Meeting {
                 "frameRate": "10"
             };
 
-            if (this.activeCamera) {
-                videoConstraints.deviceId = { exact: this.activeCamera.deviceId };
+            if (camera != null) {
+                videoConstraints.deviceId = { exact: camera.deviceId };
             }
 
             const constraints: any = {
@@ -331,19 +318,25 @@ export class Meeting {
             };
 
             const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-            if (newStream != null) {
-                if (newStream.getVideoTracks().length > 0) {
-                    this.activeUser.Camera = true;
-                    this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
-                } else {
-                    this.activeUser.Camera = false;
-                    this.activeUser.ActiveCamera = false;
-                }
-            } else {
-                this.activeUser.Camera = false;
-                this.activeUser.ActiveCamera = false;
+            if (newStream == null || newStream.getVideoTracks().length < 1) {
+                throw new Error("video stream is null");
             }
-            return newStream;
+            this.activeUser.Camera = true;
+            this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
+            if (this.localStream != null) {
+                if (this.localStream.getVideoTracks().length > 0) {
+                    this.localStream.removeTrack(this.localStream.getVideoTracks()[0]);
+                    this.localStream.addTrack(newStream.getVideoTracks()[0]);
+                }
+                else {
+                    this.localStream.addTrack(newStream.getVideoTracks()[0]);
+
+                }
+            }
+            else {
+                this.localStream = newStream;
+            }
+            await this.updateStreamProducerTrack(true, false, this.localStream);
         } catch (error: any) {
             this.activeUser.Camera = false;
             this.activeUser.ActiveCamera = false;
@@ -364,13 +357,48 @@ export class Meeting {
                 }
             }
             const newStream: MediaStream = await (navigator as any).mediaDevices.getDisplayMedia(displayMediaOptions);
-            return newStream;
-
+            if (newStream == null) {
+                throw new Error("share screen stream is null");
+            }
+            if (this.localStream != null) {
+                if (this.localStream.getVideoTracks().length > 0) {
+                    this.localStream.removeTrack(this.localStream.getVideoTracks()[0]);
+                    this.localStream.addTrack(newStream.getVideoTracks()[0]);
+                }
+                else {
+                    this.localStream.addTrack(newStream.getVideoTracks()[0]);
+                }
+            }
+            else {
+                this.localStream = newStream;
+            }
+            await this.updateStreamProducerTrack(true, false, this.localStream);
         } catch (error: any) {
             throw new ConusmaException("enableScreenShare", "can not read screen, please check exception.", error);
         }
     }
+    private async updateStreamProducerTrack(video: boolean = false, audio: boolean = false, stream: MediaStream) {
+        if (video && audio) {
+            if (this.activeConnection != null && this.activeConnection.mediaServer != null && this.activeConnection.mediaServer.videoProducer != null) {
+                await this.activeConnection.mediaServer.replaceTrack("video", this.localStream);
+            }
+            if (this.activeConnection != null && this.activeConnection.mediaServer != null && this.activeConnection.mediaServer.audioProducer != null) {
+                await this.activeConnection.mediaServer.replaceTrack("audio", this.localStream);
+            }
+        }
+        else if (video) {
+            if (this.activeConnection != null && this.activeConnection.mediaServer != null && this.activeConnection.mediaServer.videoProducer != null) {
+                await this.activeConnection.mediaServer.replaceTrack("video", this.localStream);
+            }
 
+        }
+        else if (audio) {
+            if (this.activeConnection != null && this.activeConnection.mediaServer != null && this.activeConnection.mediaServer.audioProducer != null) {
+                await this.activeConnection.mediaServer.replaceTrack("audio", this.localStream);
+            }
+        }
+
+    }
     public async connectMeeting() {
         try {
             await this.appService.connectMeeting(this.activeUser);
@@ -431,40 +459,14 @@ export class Meeting {
         }
     }
 
-    public async produce(localStream: MediaStream) {
-        this.activeConnection = await this.createConnectionForProducer();
-        this.activeConnection.stream = localStream;
-        if (localStream != null) {
-            /*// send any ice candidates to the other peer
-            // this.pc.onicecandidate = ({candidate}) => this.appService.sendMeetingEvent("candidate", {candidate});
-
-            // let the "negotiationneeded" event trigger offer generation
-            this.pc.onnegotiationneeded = async () => {
-                try {
-                    await this.pc.setLocalDescription();
-                    // send the offer to the other peer
-                    this.appService.sendMeetingEvent("description", {description: this.pc.localDescription});
-                } catch (err) {
-                    console.error(err);
-                }
-            };
-
-            this.pc.ontrack = ({track, streams}) => {
-                // once media for a remote track arrives, show it in the remote video element
-                track.onunmute = () => {
-                  // don't set remoteStream again if it is already set.
-                  if (this.remoteStream) return;
-                   this.remoteStream = streams[0];
-                };
-              };
-            
-            for (const track of localStream.getTracks()) {
-                this.pc.addTrack(track, localStream);
-            }*/
-
-            await this.activeConnection.mediaServer.produce(this.activeUser, localStream);
-            this.activeConnection.transport = this.activeConnection.mediaServer.producerTransport;
+    public async produce() {
+        if (this.localStream == null) {
+            throw new ConusmaException("produce", "local stream is null , please call enableVideoAudio()");
         }
+        this.activeConnection = await this.createConnectionForProducer();
+        this.activeConnection.stream = this.localStream;
+        await this.activeConnection.mediaServer.produce(this.activeUser, this.localStream);
+        this.activeConnection.transport = this.activeConnection.mediaServer.producerTransport;
         return this.activeConnection;
     }
 
@@ -520,13 +522,9 @@ export class Meeting {
 
     private async createConnectionForProducer() {
         const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.getMediaServer(this.activeUser.Id);
-
         var mediaServer = await this.createMediaServer(mediaServerModel);
-
         var connection: Connection = new Connection(this.activeUser, mediaServer);
-
         connection.isProducer = true;
-
         this.connections.push(connection);
         return connection;
     }

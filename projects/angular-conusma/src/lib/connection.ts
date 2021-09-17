@@ -33,7 +33,7 @@ export class Connection {
                 throw new ConusmaException("switchCamera", "stream not found, first call enableAudioVideo function");
             }
 
-        } catch (error) {
+        } catch (error:any) {
             throw new ConusmaException("switchCamera", "camera switching failed, please check detail exception", error);
         }
     }
@@ -55,7 +55,7 @@ export class Connection {
                 throw new ConusmaException("toggleAudio", "stream not found, first call enableAudioVideo function");
             }
 
-        } catch (error) {
+        } catch (error:any) {
             throw new ConusmaException("toggleAudio", "toggleAudio failed", error);
         }
     }
@@ -71,7 +71,7 @@ export class Connection {
                 throw new ConusmaException("toggleVideo", "stream not found, first call enableAudioVideo function");
             }
 
-        } catch (error) {
+        } catch (error:any) {
             throw new ConusmaException("toggleVideo", "toggleVideo failed", error);
         }
     }

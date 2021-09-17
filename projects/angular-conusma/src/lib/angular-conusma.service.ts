@@ -28,9 +28,13 @@ export class AngularConusmaService {
   private deviceId:string = "";
   private appService:AppService;
   private meetingUser$: Observable<MeetingUserModel>;
+  private activeUser: any;
+  public activeMeeting:Meeting;
   constructor(private http: HttpClient, private router:Router, private alertController:AlertController, private platform:Platform, private store: Store<{ meetingUser: MeetingUserModel }>) {
     this.meetingUser$ = this.store.select('meetingUser');
     this.appService = new AppService();
+    this.activeUser = new MeetingUserModel();
+    this.activeMeeting = new Meeting(this.activeUser, this.appService);
   }
 
   public setParameters(appId:string, parameters: { apiUrl:string, deviceId:string } ) {

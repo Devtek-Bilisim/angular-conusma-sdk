@@ -198,7 +198,7 @@ export class AngularConusmaService {
   public async login(data: { userkey: string, password: string, deviceId: string })
   {
     
-    var user_data = await this.httpPost("Login/UserLogin", data).pipe(
+    this.httpPost("Login/UserLogin", data).pipe(
       tap((result: any) => { console.log('login result', result);
         if (result.result == "ok") {
           // TODO: normal işlemler
@@ -206,7 +206,7 @@ export class AngularConusmaService {
           throw new Error(result.value);
         }
       }),
-      catchError(this.handleError<any>('user login'))).toPromise();
+      catchError(this.handleError<any>('user login')));
 
     console.log("user data "+user_data);
     sessionStorage.setItem("UserData", JSON.stringify(user_data));

@@ -100,7 +100,7 @@ export class Meeting {
 
             if (sendCloseRequest) {
                 var closeData = { 'MeetingUserId': this.activeUser.Id };
-                await this.appService.liveClose(closeData);
+                await this.appService.LiveClose(closeData);
             }
         } catch (error: any) {
             throw new ConusmaException("close", "cannot close, please check exception", error);
@@ -109,12 +109,12 @@ export class Meeting {
 
     public async closeForAll() {
         var closeData = { 'MeetingUserId': this.activeUser.Id };
-        await this.appService.liveMeetingCloseAll(closeData);
+        await this.appService.LiveMeetingAllClose(closeData);
         await this.close(false);
     }
 
     public async getMeetingInfo() {
-        return <MeetingModel>await this.appService.getLiveMeetingInfo({ 'MeetingUserId': this.activeUser.Id });
+        return <MeetingModel>await this.appService.GetLiveMeetingInfo({ 'MeetingUserId': this.activeUser.Id });
     }
 
     private async createMediaServer(_MediaServerModel: MediaServerModel) {
@@ -401,7 +401,7 @@ export class Meeting {
     }
     public async connectMeeting() {
         try {
-            await this.appService.connectMeeting(this.activeUser);
+            await this.appService.ConnectMeeting(this.activeUser);
             console.log("User connected to the meeting.");
         } catch (error: any) {
             throw new ConusmaException("connectMeeting", "can not connect meeting, please check exception", error);
@@ -410,7 +410,7 @@ export class Meeting {
     }
     public async isApproved() {
         try {
-            return await this.appService.isApproved(this.activeUser.Id);
+            return await this.appService.IsItApproved(this.activeUser.Id);
 
         } catch (error: any) {
             throw new ConusmaException("isApproved", "user is not approved, please check exception ", error);
@@ -429,7 +429,7 @@ export class Meeting {
     public async getAllUsers() {
         try {
             if (this.activeUser != null) {
-                return <MeetingUserModel[]>await this.appService.getMeetingUserList({ 'MeetingUserId': this.activeUser.Id });
+                return <MeetingUserModel[]>await this.appService.GetMeetingUserList({ 'MeetingUserId': this.activeUser.Id });
             } else {
                 return [];
             }
@@ -443,7 +443,7 @@ export class Meeting {
     public async getProducerUsers() {
         try {
             if (this.activeUser != null) {
-                var users = await this.appService.getMeetingUserList({ 'MeetingUserId': this.activeUser.Id });
+                var users = await this.appService.GetMeetingUserList({ 'MeetingUserId': this.activeUser.Id });
                 var result: MeetingUserModel[] = [];
                 users.forEach((item: any) => {
                     if (item.Camera == true) {
@@ -479,7 +479,7 @@ export class Meeting {
                 this.activeUser.Mic = false;
                 this.activeUser.ActiveCamera = false;
                 this.activeUser.ActiveMic = false;
-                await this.appService.updateMeetingUser(this.activeUser);
+                await this.appService.UpdateMeetingUser(this.activeUser);
                 var index = this.connections.findIndex(us => us.user.Id == this.activeUser.Id);
                 this.removeItemOnce(this.connections, index);
             }
@@ -521,7 +521,7 @@ export class Meeting {
     }
 
     private async createConnectionForProducer() {
-        const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.getMediaServer(this.activeUser.Id);
+        const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.GetMediaServer(this.activeUser.Id);
         var mediaServer = await this.createMediaServer(mediaServerModel);
         var connection: Connection = new Connection(this.activeUser, mediaServer);
         connection.isProducer = true;

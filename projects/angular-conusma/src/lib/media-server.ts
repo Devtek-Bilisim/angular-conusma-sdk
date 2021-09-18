@@ -45,7 +45,7 @@ export class MediaServer {
                 user.ActiveMic = true;
             }
             user.MediaServerId = this.id;
-            this.appService.connectMeeting(user);
+            this.appService.ConnectMeeting(user);
 
         } catch (error:any) {
             throw new ConusmaException("produce", "can not send stream, please check exception", error);

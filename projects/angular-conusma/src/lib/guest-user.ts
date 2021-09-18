@@ -17,7 +17,7 @@ export class GuestUser {
   public async create() {
     var token = localStorage.getItem('JWT_TOKEN');
     if (token != undefined && token != null) {
-      var result = await this.appService.createPublicUser(token);
+      var result = await this.appService.createPublicUser();
       this.userInfo = result;
       localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
       localStorage.setItem('UserData', JSON.stringify(this.userInfo));
@@ -34,7 +34,7 @@ export class GuestUser {
   public async load() {
     var token = localStorage.getItem('JWT_TOKEN');
     if (token != undefined && token != null) {
-      var result = await this.appService.createPublicUser(token);
+      var result = await this.appService.createPublicUser();
       this.userInfo = result;
       localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
       localStorage.setItem('UserData', JSON.stringify(this.userInfo));
@@ -49,9 +49,9 @@ export class GuestUser {
   }
   public async joinMeetingByInviteCode(inviteCode: string, meetingName: string = 'Guest') {
     try {
-      var resultcode = await this.appService.controlInviteCode(inviteCode);
+      var resultcode = await this.appService.inviteCodeControl(inviteCode);
       var meeting: MeetingModel = resultcode;
-      var result = await this.appService.joinMeeting(meeting.MeetingId, meeting.Password, meetingName);
+      var result = await this.appService.JoinMeeting({'meetingId':meeting.MeetingId, 'password':meeting.Password, 'meetingFullName':meetingName});
       var meetingUser: MeetingUserModel = result;
       var activeMeeting = new Meeting(meetingUser, this.appService);
       return activeMeeting;
@@ -61,9 +61,9 @@ export class GuestUser {
   }
   public async joinMeeting(meetingId: string, meetingPassword: string, meetingName: string = 'Guest') {
     try {
-      var resultcode = await this.appService.isMeetingValid(meetingId, meetingPassword);
+      var resultcode = await this.appService.isMeetingValid({'meetingId':meetingId,'password':meetingPassword});
       var meeting: MeetingModel = resultcode;
-      var result = await this.appService.joinMeeting(meeting.MeetingId, meeting.Password, meetingName);
+      var result = await this.appService.JoinMeeting({'meetingId':meeting.MeetingId,'password': meeting.Password,'meetingFullName': meetingName});
       var meetingUser: MeetingUserModel = result;
       var activeMeeting = new Meeting(meetingUser, this.appService);
       return activeMeeting;

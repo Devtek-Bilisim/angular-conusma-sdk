@@ -52,7 +52,7 @@ export class User {
     public async joinMeeting(meeting:MeetingModel,meetingName:string='User')
     {
         try {
-            var result = await this.appService.joinMeeting(meeting.MeetingId,meeting.Password,meetingName);
+            var result = await this.appService.JoinMeeting({'meetingId':meeting.MeetingId,'password':meeting.Password,'meetingFullName':meetingName});
             var meetingUser:MeetingUserModel = result;
             var activeMeeting = new Meeting(meetingUser, this.appService);
             return activeMeeting;

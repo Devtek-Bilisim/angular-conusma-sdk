@@ -199,7 +199,13 @@ export class AngularConusmaService {
   {
     
     var user_data = await this.httpPost("Login/UserLogin", data).pipe(
-      tap((result: any) => { console.log('login result', result);}),
+      tap((result: any) => { console.log('login result', result);
+        if (result.result == "ok") {
+          // TODO: normal işlemler
+        } else {
+          throw new Error(result.value);
+        }
+      }),
       catchError(this.handleError<any>('user login'))).toPromise();
 
     console.log("user data "+user_data);

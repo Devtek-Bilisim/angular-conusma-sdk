@@ -2,15 +2,16 @@ import { Injectable } from '@angular/core';
 import { User } from './user';
 import { ConusmaException } from './Exceptions/conusma-exception';
 import { GuestUser } from './guest-user';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { ConusmaRestApiException } from './Exceptions/conusma-restapi-exception';
 import { AppService } from './app.service';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { map, mapTo, catchError, throwIfEmpty } from "rxjs/operators";
+import { map, mapTo, catchError, throwIfEmpty, tap } from "rxjs/operators";
 import { Router } from '@angular/router';
 import { AlertController, Platform } from '@ionic/angular';
 import { Meeting } from './meeting';
 import { MeetingModel } from './Models/meeting-model';
+import { ConsoleReporter } from 'jasmine';
 
 @Injectable({
   providedIn: 'root'
@@ -196,7 +197,11 @@ export class AngularConusmaService {
   }
   public async login(data: { userkey: string, password: string, deviceId: string })
   {
-    var user_data = await this.httpPost("Login/UserLogin", data).toPromise();
+    
+    var user_data = await this.httpPost("Login/UserLogin", data).pipe(
+      tap((result: any) => { console.log('login result', result);}),
+      catchError(this.handleError<any>('user login'))).toPromise();
+
     console.log("user data "+user_data);
     sessionStorage.setItem("UserData", JSON.stringify(user_data));
     localStorage.setItem('JWT_TOKEN', user_data.Token);
@@ -204,6 +209,20 @@ export class AngularConusmaService {
     await this.user.load();
     return this.user;
   }
+  private handleError<T>(operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+
+      // TODO: send the error to remote logging infrastructure
+      console.error(error); // log to console instead
+
+      // TODO: better job of transforming error for user consumption
+      console.log(`${operation} failed: ${error.message}`);
+
+      // Let the app keep running by returning an empty result.
+      return of(result as T);
+    };
+  }
+
   public safedevicecode(data: { Code: string, DeviceId: string }): Observable<string> {
     return this.httpPost("Login/SafeDeviceCodeCheck", data);
   }

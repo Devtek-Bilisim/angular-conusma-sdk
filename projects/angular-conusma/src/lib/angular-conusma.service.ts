@@ -67,6 +67,7 @@ export class AngularConusmaService {
     try {
       var user: GuestUser = new GuestUser(this.appService);
       await user.create();
+      this.publicUser = user;
       return user;
     } catch (error: any) {
       throw new ConusmaException("createGuestUser", "GuestUser cannot be created.", error);
@@ -172,14 +173,48 @@ export class AngularConusmaService {
 
     await alert.present();
   }
-
+  public async IsLogginUser() {
+    try {
+      var token = this.appService.getJwtToken();
+      if (token != undefined && token != null) {
+        var user_data = await this.appService.isTokenValid();
+        sessionStorage.setItem("UserData", JSON.stringify(user_data));
+        localStorage.setItem('JWT_TOKEN', user_data.Token);
+        this.user = new User(this.appService);
+        this.user.userInfo = user_data;
+        return true;
+      }
+    } catch (error) {
+      return false;
+    }
+    return false;
+  }
+  public async safedevicecode(data: { Code: string, DeviceId: string }) {
+    return await this.appService.safedevicecode(data);
+  }
+  public async isMeetingValid(data: {"MeetingId": '', "Password": ''}) {
+    return <MeetingModel> await this.appService.isMeetingValid(data);
+  }
+  public async meetingInviteCodeControl(code:string)
+  {
+    return <MeetingModel> await this.appService.inviteCodeControl(code);
+ 
+  }
 
   public async login(data: { userkey: string, password: string, deviceId: string }) {
     var user_data = await this.appService.login(data);
     sessionStorage.setItem("UserData", JSON.stringify(user_data));
     localStorage.setItem('JWT_TOKEN', user_data.Token);
     this.user = new User(this.appService);
-    await this.user.load();
+    this.user.userInfo = user_data;
+    return this.user;
+  }
+  public async Googlelogin(data: { GoogleToken: string, deviceId: string }) {
+    var user_data = await this.appService.Googlelogin(data);
+    sessionStorage.setItem("UserData", JSON.stringify(user_data));
+    localStorage.setItem('JWT_TOKEN', user_data.Token);
+    this.user = new User(this.appService);
+    this.user.userInfo = user_data;
     return this.user;
   }
 

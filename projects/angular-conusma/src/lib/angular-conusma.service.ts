@@ -227,4 +227,13 @@ export class AngularConusmaService {
     }
   }
 
+  public async getCountries() {
+    try {
+      var countries:Array<any> = await this.appService.getCountries();
+      return countries;
+    } catch (error:any) {
+      throw new ConusmaException("getCountries","Country list cannot be received.", error);
+    }
+  }
+
 }

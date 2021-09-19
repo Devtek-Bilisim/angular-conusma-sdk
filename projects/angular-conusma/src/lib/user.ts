@@ -1,9 +1,7 @@
-import { Store } from "@ngrx/store";
 import { Observable } from "rxjs";
 import { AppService } from "./app.service";
 import { ConusmaException } from "./Exceptions/conusma-exception";
 import { Meeting } from "./meeting";
-import { updateMeetingUser } from "./meeting.actions";
 import { MeetingModel } from "./Models/meeting-model";
 import { MeetingUserModel } from "./Models/meeting-user-model";
 import { UserModel } from "./Models/user-model";
@@ -23,7 +21,7 @@ export class User {
     public async createMeeting()
     {
       try {
-        var meeting:Meeting = await this.appService.createMeeting();
+        var meeting:MeetingModel = await this.appService.createMeeting();
         return meeting;
       } catch (error:any) {
         throw new ConusmaException("createMeeting","Meeting cannot be created.", error);
@@ -37,6 +35,15 @@ export class User {
             return meetings;
           } catch (error:any) {
             throw new ConusmaException("getMeetings","Meeting list cannot be received.", error);
+          }
+    }
+    public async getSchedules(data:any)
+    {
+        try {
+            var upcomingMeetings:Array<any> = await this.appService.getSchedules(data);
+            return upcomingMeetings;
+          } catch (error:any) {
+            throw new ConusmaException("getSchedules","Upcoming meeting list cannot be received.", error);
           }
     }
     public async getProfileMeeting()

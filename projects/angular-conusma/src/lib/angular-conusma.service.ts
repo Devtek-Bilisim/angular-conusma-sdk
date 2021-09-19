@@ -183,21 +183,13 @@ export class AngularConusmaService {
     return this.user;
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  public async getTimezones() {
+    try {
+      var timezones:Array<any> = await this.appService.getTimezones();
+      return timezones;
+    } catch (error:any) {
+      throw new ConusmaException("getTimezones","Timezone list cannot be received.", error);
+    }
+  }
 
 }

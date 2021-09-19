@@ -384,7 +384,7 @@ export class AppService {
     });
   }
   public async Googlelogin(data: { GoogleToken: string, deviceId: string }) {
-     await this.httpPost("Login/GoogleUserLogin", data).toPromise().then((res)=>{
+     return await this.httpPost("Login/GoogleUserLogin", data).toPromise().then((res)=>{
       return res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);

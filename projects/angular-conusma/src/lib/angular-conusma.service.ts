@@ -173,13 +173,26 @@ export class AngularConusmaService {
 
     await alert.present();
   }
+  private stroageSaveUserData(userData:any)
+  {
+    let rememberme = localStorage.getItem("rememberme");
+    if(rememberme)
+    {
+      localStorage.setItem("UserData", JSON.stringify(userData));
+      localStorage.setItem('JWT_TOKEN', userData.Token);
+    }
+    else
+    {
+      sessionStorage.setItem("UserData", JSON.stringify(userData));
+      sessionStorage.setItem('JWT_TOKEN', userData.Token);
+    }
+  }
   public async isUserLoggedIn() {
     try {
       var token = this.appService.getJwtToken();
       if (token != undefined && token != null) {
         var user_data = await this.appService.isTokenValid();
-        sessionStorage.setItem("UserData", JSON.stringify(user_data));
-        localStorage.setItem('JWT_TOKEN', user_data.Token);
+        this.stroageSaveUserData(user_data);
         this.user = new User(this.appService);
         this.user.userInfo = user_data;
         return true;
@@ -203,16 +216,14 @@ export class AngularConusmaService {
 
   public async login(data: { userkey: string, password: string, deviceId: string }) {
     var user_data = await this.appService.login(data);
-    sessionStorage.setItem("UserData", JSON.stringify(user_data));
-    localStorage.setItem('JWT_TOKEN', user_data.Token);
+    this.stroageSaveUserData(user_data);
     this.user = new User(this.appService);
     this.user.userInfo = user_data;
     return this.user;
   }
   public async Googlelogin(data: { GoogleToken: string, deviceId: string }) {
     var user_data = await this.appService.Googlelogin(data);
-    sessionStorage.setItem("UserData", JSON.stringify(user_data));
-    localStorage.setItem('JWT_TOKEN', user_data.Token);
+    this.stroageSaveUserData(user_data);
     this.user = new User(this.appService);
     this.user.userInfo = user_data;
     return this.user;

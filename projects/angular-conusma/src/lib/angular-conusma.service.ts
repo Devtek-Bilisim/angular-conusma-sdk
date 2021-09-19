@@ -173,7 +173,7 @@ export class AngularConusmaService {
 
     await alert.present();
   }
-  public async IsLogginUser() {
+  public async isUserLoggedIn() {
     try {
       var token = this.appService.getJwtToken();
       if (token != undefined && token != null) {

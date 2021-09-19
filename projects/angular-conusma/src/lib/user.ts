@@ -37,10 +37,10 @@ export class User {
             throw new ConusmaException("getMeetings","Meeting list cannot be received.", error);
           }
     }
-    public async getSchedules(data:any)
+    public async getSchedules()
     {
         try {
-            var upcomingMeetings:Array<any> = await this.appService.getSchedules(data);
+            var upcomingMeetings:Array<any> = await this.appService.getSchedules();
             return upcomingMeetings;
           } catch (error:any) {
             throw new ConusmaException("getSchedules","Upcoming meeting list cannot be received.", error);

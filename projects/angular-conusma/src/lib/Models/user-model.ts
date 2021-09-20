@@ -19,4 +19,5 @@ export class UserModel {
     public Id:string = "";
     public AddedDate:string = "";
     public ModifiedDate:string = "";
+    public location:string = "";
 }

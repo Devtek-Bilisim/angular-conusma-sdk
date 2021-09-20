@@ -8,6 +8,7 @@ export class UserModel {
     public PhoneNumber:string = "";
     public Address1:string = "";
     public Address2:string = "";
+    public Country:number = 0;
     public City:string = "";
     public State:string = "";
     public ZipCode:string = "";

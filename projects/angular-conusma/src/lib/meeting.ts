@@ -178,22 +178,20 @@ export class Meeting {
         this.audioOutputs = [];
         this.videoInputs = [];
         if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-            await navigator.mediaDevices.enumerateDevices()
-                .then((deviceInfos) => {
-                    for (var i = 0; i !== deviceInfos.length; ++i) {
-                        var deviceInfo = deviceInfos[i];
-                        var option = document.createElement('option');
-                        option.value = deviceInfo.deviceId;
-                        if (deviceInfo.kind === 'audioinput') {
-                            this.audioInputs.push(deviceInfo);
-                        } else if (deviceInfo.kind === 'audiooutput') {
-                            this.audioOutputs.push(deviceInfo);
-                        } else if (deviceInfo.kind === 'videoinput') {
-                            this.videoInputs.push(deviceInfo)
-                        }
-                    }
-
-                });
+            var deviceList = await navigator.mediaDevices.enumerateDevices();
+            for (var i = 0; i !== deviceList.length; ++i) {
+                var deviceInfo = deviceList[i];
+                var option = document.createElement('option');
+                option.value = deviceInfo.deviceId;
+                if (deviceInfo.kind === 'audioinput') {
+                    this.audioInputs.push(deviceInfo);
+                } else if (deviceInfo.kind === 'audiooutput') {
+                    this.audioOutputs.push(deviceInfo);
+                } else if (deviceInfo.kind === 'videoinput') {
+                    this.videoInputs.push(deviceInfo)
+                }
+            }
+                
         } 
     }
     public async switchCamera(camera: MediaDeviceInfo) {

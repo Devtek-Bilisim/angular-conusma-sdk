@@ -24,12 +24,13 @@ export class AngularConusmaService {
   public publicUser: GuestUser;
   public activeMeeting: Meeting;
   constructor(private http: HttpClient, private router: Router, private alertController: AlertController, private platform: Platform) {
-
+    
   }
   public setParameters(parameters: { apiUrl: string, deviceId: string }) {
     this.deviceId = parameters.deviceId;
     this.apiUrl = parameters.apiUrl;
     this.appService = new AppService(this.http, { apiUrl: this.apiUrl, deviceId: this.deviceId, version: "1.0.0" });
+    this.load().then(result => { });
   }
 
   public async load() {

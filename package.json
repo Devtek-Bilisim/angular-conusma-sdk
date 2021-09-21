@@ -1,6 +1,6 @@
 {
   "name": "angular-conusma-sdk",
-  "version": "0.5.4",
+  "version": "0.5.8",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

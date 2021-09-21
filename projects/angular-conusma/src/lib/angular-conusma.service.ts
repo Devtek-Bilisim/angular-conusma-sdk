@@ -12,6 +12,7 @@ import { AlertController, Platform } from '@ionic/angular';
 import { Meeting } from './meeting';
 import { MeetingModel } from './Models/meeting-model';
 import { UserModel } from './Models/user-model';
+import { MeetingUserModel } from './Models/meeting-user-model';
 
 @Injectable({
   providedIn: 'root'
@@ -24,19 +25,20 @@ export class AngularConusmaService {
   public publicUser: GuestUser;
   public activeMeeting: Meeting;
   constructor(private http: HttpClient, private router: Router, private alertController: AlertController, private platform: Platform) {
-    
+    this.activeMeeting = new Meeting(new MeetingUserModel(), this.appService);
   }
   public setParameters(parameters: { apiUrl: string, deviceId: string }) {
     this.deviceId = parameters.deviceId;
     this.apiUrl = parameters.apiUrl;
     this.appService = new AppService(this.http, { apiUrl: this.apiUrl, deviceId: this.deviceId, version: "1.0.0" });
-    this.load().then(result => { });
   }
 
   public async load() {
     try {
       if (this.user == null && this.publicUser == null) {
+        console.log("user loading...");
         if (await this.appService.isTokenValid()) {
+          console.log("token is valid... user loading...");
           var user_raw_data = sessionStorage.getItem("UserData");
           var _user_data = JSON.parse(user_raw_data);
           if (_user_data.User_Type == 0) {
@@ -50,10 +52,12 @@ export class AngularConusmaService {
           else {
             throw new Error("user not found");
           }
+        } else {
+          console.log("token invalid!");
         }
       }
     } catch (error: any) {
-      throw new ConusmaException("load", "not load user data", error);
+      throw new ConusmaException("load", "can't load user data", error);
 
     }
   }

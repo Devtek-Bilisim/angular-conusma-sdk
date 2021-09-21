@@ -46,6 +46,33 @@ export class User {
             throw new ConusmaException("getSchedules","Upcoming meeting list cannot be received.", error);
           }
     }
+    public async getSchedule(id:number)
+    {
+        try {
+            var result = await this.appService.getSchedule(id);
+            return result;
+          } catch (error:any) {
+            throw new ConusmaException("getSchedule","Upcoming meeting cannot be received.", error);
+          }
+    }
+    public async updateSchedule(data:any)
+    {
+        try {
+            var result = await this.appService.updateSchedule(data);
+            return result;
+          } catch (error:any) {
+            throw new ConusmaException("updateSchedule","Can't update schedule.", error);
+          }
+    }
+    public async createSchedule(data:any)
+    {
+        try {
+            var result = await this.appService.createSchedule(data);
+            return result;
+          } catch (error:any) {
+            throw new ConusmaException("createSchedule","Can't create schedule.", error);
+          }
+    }
     public async getProfileMeeting()
     {
         try {

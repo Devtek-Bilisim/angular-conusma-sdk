@@ -73,6 +73,7 @@ export class AngularConusmaService {
       var user: GuestUser = new GuestUser(this.appService);
       await user.create();
       this.publicUser = user;
+      this.appService.saveUserData(this.publicUser.userInfo,true);
       return user;
     } catch (error: any) {
       throw new ConusmaException("createGuestUser", "GuestUser cannot be created.", error);
@@ -210,8 +211,8 @@ export class AngularConusmaService {
   public async safedevicecode(data: { Code: string, DeviceId: string }) {
     return await this.appService.safedevicecode(data);
   }
-  public async isMeetingValid(data: {"MeetingId": '', "Password": ''}) {
-    return <MeetingModel> await this.appService.isMeetingValid(data);
+  public async isMeetingValid(meetingId:string,meetingPassword:string) {
+    return <MeetingModel> await this.appService.isMeetingValid({"MeetingId": meetingId, "Password": meetingPassword});
   }
   public async meetingInviteCodeControl(code:string)
   {
@@ -224,6 +225,7 @@ export class AngularConusmaService {
     this.stroageSaveUserData(user_data);
     this.user = new User(this.appService);
     this.user.userInfo = user_data;
+    this.appService.saveUserData(this.user.userInfo);
     return this.user;
   }
   public async Googlelogin(data: { GoogleToken: string, deviceId: string }) {
@@ -231,6 +233,7 @@ export class AngularConusmaService {
     this.stroageSaveUserData(user_data);
     this.user = new User(this.appService);
     this.user.userInfo = user_data;
+    this.appService.saveUserData(this.user.userInfo);
     return this.user;
   }
 

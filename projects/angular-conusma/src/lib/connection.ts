@@ -1,28 +1,55 @@
 import { MeetingUserModel } from "./Models/meeting-user-model";
 import { MediaServer } from "./media-server";
 import { ConusmaException } from "./Exceptions/conusma-exception";
+import { EventEmitter } from "@angular/core";
 export class Connection {
     user:MeetingUserModel;
     mediaServer:MediaServer;
     transport:any;
     
-    stream:MediaStream;
+    stream:MediaStream = null;
     
     isProducer:boolean = false;
-    
+    public reactionsEvent: EventEmitter<string> = new EventEmitter<string>();
+    public changeStreamState: EventEmitter<boolean> = new EventEmitter<boolean>();
     public isIntersecting:boolean = false;
     public applauseEmoji: any;
     public thumbEmoji: any;
     
     public isAudioActive = true;
     public isVideoActive = true;
-
-    constructor(user:MeetingUserModel, mediaServer:MediaServer) {
+    public lastReactionsTime = "";
+    constructor(user:MeetingUserModel) {
         this.user = user;
-        this.mediaServer = mediaServer;
-        this.stream = new MediaStream();
     }
+    public setMediaServer( mediaServer:MediaServer)
+    {
+        this.mediaServer = mediaServer;
+
+    }
+    public changeStreamStateEventEmit(state:boolean)
+    {
+        this.changeStreamState.emit(state);
+    }
+    public reactionsChangeControl()
+    {
+        try {
+            var now = new Date();
+            var reactionDate = new Date(this.user.ReactionTime);
+            if(reactionDate > now)
+            {
+                if( this.user.ReactionTime!= this.lastReactionsTime)
+                {
+                    this.lastReactionsTime = this.user.ReactionTime;
+                    this.reactionsEvent.emit(this.user.Reaction);
+                }
+            }
+        } catch (error) {
+            console.log("reactionsChangeControl error => "+error);
+        }
     
+        
+    }
     public switchCamera() {
         try {
             if (this.isProducer && this.stream != null) {

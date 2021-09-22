@@ -21,6 +21,20 @@ export class AppService {
       return sessionStorage.getItem("JWT_TOKEN");
     }
   }
+  public saveUserData(userData:any,ispublic =false) {
+    if(ispublic)
+    {
+      localStorage.setItem("rememberme","true");
+    }
+    let rememberme = localStorage.getItem("rememberme");
+    if (rememberme) {
+       localStorage.setItem("JWT_TOKEN",userData.Token);
+       localStorage.setItem("UserData",JSON.stringify(userData));
+    } else {
+       sessionStorage.setItem("JWT_TOKEN",userData.Token);
+       sessionStorage.setItem("UserData",JSON.stringify(userData));
+    }
+  }
   public httpPost(service: string, data: any): Observable<any> {
     var token = localStorage.getItem("JWT_TOKEN");
     if(token != null && token != undefined)
@@ -51,7 +65,7 @@ export class AppService {
     });
   }
   public async isMeetingValid(data:any) {
-    return await this.httpPost("/Meeting/MeetingIsValid" , this).toPromise().then((res)=>{
+    return await this.httpPost("Meeting/MeetingIsValid" , this).toPromise().then((res)=>{
       return res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
@@ -265,7 +279,7 @@ export class AppService {
     });
   }
   public async getMediaServerById(meetingUserId: string, mediaServerId: number) {
-    return await this.httpPost("/Live/GetMediaServer/" + meetingUserId + "/" + mediaServerId, null).toPromise().then((res)=>{
+    return await this.httpPost("Live/GetMediaServer/" + meetingUserId + "/" + mediaServerId, null).toPromise().then((res)=>{
       return res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);

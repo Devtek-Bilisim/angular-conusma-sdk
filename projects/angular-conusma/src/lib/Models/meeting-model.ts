@@ -16,7 +16,6 @@ export class MeetingModel {
     public OwnerId:string = "";
     public AddedDate:string = "";
     public ModifiedDate:string = "";
-    public :number = 0;
     public Id:number = 0;
 }
 export enum MeetingStatusEnum

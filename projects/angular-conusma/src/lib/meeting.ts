@@ -15,7 +15,7 @@ export class Meeting {
     public meetingWorker: Worker = null;
     public mediaServers: MediaServer[] = new Array();
     public connections: Connection[] = new Array();
-
+    public userList:MeetingUserModel[] = new Array();
     private appService: AppService;
 
     public isClosedRequestRecieved: boolean = false;
@@ -54,17 +54,64 @@ export class Meeting {
 
         }
     }
+    private async ReactionsControl() {
+        
+        this.connections.forEach(connection => {
+            connection.reactionsChangeControl();
+        });
+    }
+    private async ConnectNewConnectionAndDeleteConenction() {
+        try {
+            console.log(this.userList);
+            console.log(this.connections);
+            for (var i = 0; i < this.userList.length; i++) {
+                if (this.connections.find(us => us.user.Id == this.userList[i].Id) == null) {
+                    var connectionConsumer = await this.createConsumerConnection(this.userList[i]);
+                    if(connectionConsumer != null)
+                    {
+                        if(this.userList[i].Camera || this.userList[i].Mic)
+                        {
+                            await this.consume(connectionConsumer);
+                        }
+                    }
+                }
+            }
+            var deleteUserList: Connection[] = [];
+            for (var l = 0; l < this.connections.length; l++) {
+                if (this.userList.find(us => us.Id == this.connections[l].user.Id) == null) {
+                    deleteUserList.push(this.connections[l]);
+                }
+            }
+            for (var d = 0; d < deleteUserList.length; d++) {
+                await this.closeConsumer(deleteUserList[d]);
+            }
+            for(var u = 0 ; u < this.connections.length ; u++)
+            {
+                var user = this.userList.find(us => us.Id == this.connections[u].user.Id);
+                if(user != null)
+                {
+                   this.connections[u].user = user;
+                }
+            }
+
+        } catch (error) {
+            console.log("error " + error);
+        }
+    }
     private startMeetingWorker(apiUrl: string) {
         if (this.meetingWorker != null) {
             this.meetingWorker.terminate();
         }
         this.meetingWorker = new Worker("./assets/workers/meetingworker.js");
         this.meetingWorker.postMessage({ "MeetingUserId": this.activeUser.Id, "Token": this.appService.getJwtToken(), "url": apiUrl + "/Live/GetMeetingEvents", "IAmHereUrl": apiUrl + "/Live/IAmHere" });
-        this.meetingWorker.onmessage = (event: any) => {
+        this.meetingWorker.onmessage = async (event: any) => {
             var eventChange = JSON.parse(event.data);
             if (this.workerModel.MeetingUsers != eventChange.MeetingUsers) {
                 this.meetingEvents.emit("meetingUser");
                 this.workerModel.MeetingUsers = eventChange.MeetingUsers;
+                this.userList = await this.getAllUsers();
+                await this.ConnectNewConnectionAndDeleteConenction();
+                await this.ReactionsControl();
             }
             if (this.workerModel.ChatUpdates != eventChange.ChatUpdates) {
                 this.meetingEvents.emit("chat");
@@ -79,6 +126,7 @@ export class Meeting {
 
     public async close(sendCloseRequest: boolean = false) {
         try {
+            this.activeConnection = null;
             if (this.meetingWorker != null) {
                 this.meetingWorker.terminate();
             }
@@ -191,8 +239,8 @@ export class Meeting {
                     this.videoInputs.push(deviceInfo)
                 }
             }
-                
-        } 
+
+        }
     }
     public async switchCamera(camera: MediaDeviceInfo) {
         await this.enableVideo(camera);
@@ -415,15 +463,7 @@ export class Meeting {
         }
     }
 
-    private waitWhoAreYou(socket: any) {
-        return new Promise(resolve => {
-            socket.on("WhoAreYou")
-            {
-                console.log("WhoAreYou signal.");
-                resolve({});
-            }
-        });
-    }
+   
     public async getAllUsers() {
         try {
             if (this.activeUser != null) {
@@ -456,13 +496,28 @@ export class Meeting {
             throw new ConusmaException("getProducerUsers", "Unable to fetch producer user list, please check detail exception");
         }
     }
+    public async createConnection()
+    {
+        if(this.activeConnection != null)
+        {
+            throw new ConusmaException("createConnection","active connection is not null");
+        }
+        this.activeConnection  = new Connection(this.activeUser);
+        this.activeConnection.isProducer = false;
+        this.connections.push(this.activeConnection);
+
+    }
 
     public async produce() {
         if (this.localStream == null) {
             throw new ConusmaException("produce", "local stream is null , please call enableVideoAudio()");
         }
-        this.activeConnection = await this.createConnectionForProducer();
+        if (this.activeConnection == null) {
+            throw new ConusmaException("produce", "activeConnection  is null , please call createConnection()");
+        }
+        await this.createConnectionForProducer();
         this.activeConnection.stream = this.localStream;
+        this.activeConnection.changeStreamStateEventEmit(true);
         await this.activeConnection.mediaServer.produce(this.activeUser, this.localStream);
         this.activeConnection.transport = this.activeConnection.mediaServer.producerTransport;
         return this.activeConnection;
@@ -496,12 +551,23 @@ export class Meeting {
         }
         return arr;
     }
-
-    public async consume(user: MeetingUserModel) {
-        var connection = await this.createConnectionForConsumer(user);
+    public async createConsumerConnection(user: MeetingUserModel)
+    {
+        if( this.connections.find(us => us.user.Id == user.Id)  == null)
+        {
+            var connection: Connection = new Connection(user);
+            connection.isProducer = false;
+            this.connections.push(connection);
+            return connection;
+        }
+        return null;
+    }
+    public async consume(connection: Connection) {
+         connection = await this.createConnectionForConsumer(connection);
         try {
-            connection.transport = await connection.mediaServer.consume(user);
+            connection.transport = await connection.mediaServer.consume(connection.user);
             connection.stream = connection.transport.RemoteStream;
+            connection.changeStreamStateEventEmit(true);
         } catch (e) {
             connection.user.Camera = false;
             connection.user.Mic = false;
@@ -521,17 +587,14 @@ export class Meeting {
     private async createConnectionForProducer() {
         const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.GetMediaServer(this.activeUser.Id);
         var mediaServer = await this.createMediaServer(mediaServerModel);
-        var connection: Connection = new Connection(this.activeUser, mediaServer);
-        connection.isProducer = true;
-        this.connections.push(connection);
-        return connection;
+        this.activeConnection.setMediaServer(mediaServer);
+        this.activeConnection.isProducer = true;
     }
 
-    private async createConnectionForConsumer(user: MeetingUserModel) {
-        const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.getMediaServerById(this.activeUser.Id, user.MediaServerId);
+    private async createConnectionForConsumer(connection: Connection) {
+        const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.getMediaServerById(this.activeUser.Id, connection.user.MediaServerId);
         var mediaServer = await this.createMediaServer(mediaServerModel);
-        var connection: Connection = new Connection(user, mediaServer);
-        this.connections.push(connection);
+        connection.setMediaServer(mediaServer);
         return connection;
     }
 }

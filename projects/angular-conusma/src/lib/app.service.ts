@@ -80,6 +80,7 @@ export class AppService {
   }
   public async IsItApproved(MeetingUserId: string) {
     return await this.httpPost("Live/IsItApproved/" + MeetingUserId, null).toPromise().then((res)=>{
+      console.log("Response"+res);
       return res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);

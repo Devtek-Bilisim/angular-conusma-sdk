@@ -13,6 +13,7 @@ import { Meeting } from './meeting';
 import { MeetingModel } from './Models/meeting-model';
 import { UserModel } from './Models/user-model';
 import { MeetingUserModel } from './Models/meeting-user-model';
+import { CountryCode } from './Models/country-code';
 
 @Injectable({
   providedIn: 'root'
@@ -248,8 +249,8 @@ export class AngularConusmaService {
 
   public async getCountries() {
     try {
-      var countries:Array<any> = await this.appService.getCountries();
-      return countries;
+      var countries = await this.appService.getCountries();
+      return <CountryCode[]>countries.value;
     } catch (error:any) {
       throw new ConusmaException("getCountries","Country list cannot be received.", error);
     }

@@ -26,7 +26,7 @@ export class AngularConusmaService {
   public publicUser: GuestUser;
   public activeMeeting: Meeting;
   constructor(private http: HttpClient, private router: Router, private alertController: AlertController, private platform: Platform) {
-    this.activeMeeting = new Meeting(new MeetingUserModel(), this.appService);
+
   }
   public setParameters(parameters: { apiUrl: string, deviceId: string }) {
     this.deviceId = parameters.deviceId;

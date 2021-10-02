@@ -12,6 +12,7 @@ export class Connection {
     isProducer:boolean = false;
     public reactionsEvent: EventEmitter<string> = new EventEmitter<string>();
     public changeStreamState: EventEmitter<boolean> = new EventEmitter<boolean>();
+    public changeSpeaker: EventEmitter<string> = new EventEmitter<string>();
     public isIntersecting:boolean = false;
     public applauseEmoji: any;
     public thumbEmoji: any;
@@ -19,13 +20,20 @@ export class Connection {
     public isAudioActive = true;
     public isVideoActive = true;
     public lastReactionsTime = "";
-    constructor(user:MeetingUserModel) {
+    public activeSpekar:string="";
+    constructor(user:MeetingUserModel,_activeSpeaker:string="Default") {
         this.user = user;
+        this.activeSpekar = _activeSpeaker;
     }
     public setMediaServer( mediaServer:MediaServer)
     {
         this.mediaServer = mediaServer;
 
+    }
+    public changeSpeakerEventEmit(deviceId:string)
+    {
+        this.activeSpekar = deviceId;
+        this.changeSpeaker.emit(deviceId);
     }
     public changeStreamStateEventEmit(state:boolean)
     {

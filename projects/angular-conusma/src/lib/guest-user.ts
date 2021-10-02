@@ -53,7 +53,7 @@ export class GuestUser {
       var meeting: MeetingModel = resultcode;
       var result = await this.appService.JoinMeeting({'meetingId':meeting.MeetingId, 'password':meeting.Password, 'meetingFullName':meetingName});
       var meetingUser: MeetingUserModel = result;
-      var activeMeeting = new Meeting(meetingUser, this.appService);
+      var activeMeeting = new Meeting(meetingUser,meeting, this.appService);
       return activeMeeting;
     } catch (error:any) {
       throw new ConusmaException("joinMeeting", "failed to join the meeting", error);
@@ -65,7 +65,7 @@ export class GuestUser {
       var meeting: MeetingModel = resultcode;
       var result = await this.appService.JoinMeeting({'meetingId':meeting.MeetingId,'password': meeting.Password,'meetingFullName': meetingName});
       var meetingUser: MeetingUserModel = result;
-      var activeMeeting = new Meeting(meetingUser, this.appService);
+      var activeMeeting = new Meeting(meetingUser,meeting, this.appService);
       return activeMeeting;
     } catch (error:any) {
       throw new ConusmaException("joinMeeting", "failed to join the meeting", error);

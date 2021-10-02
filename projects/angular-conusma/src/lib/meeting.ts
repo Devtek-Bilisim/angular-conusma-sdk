@@ -35,13 +35,16 @@ export class Meeting {
 
     private workerModel: WorkerDataModel = new WorkerDataModel();
     public meetingEvents: EventEmitter = new EventEmitter();
-    constructor(activeUser: MeetingUserModel, appService: AppService) {
+    public meeting:MeetingModel = null;
+    public activeSpeaker:string="default";
+    constructor(activeUser: MeetingUserModel, _meeting:MeetingModel,appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
         this.activeUser.Camera = false;
         this.activeUser.Mic = false;
         this.activeUser.ActiveCamera = false;
         this.activeUser.ActiveMic = false;
+        this.meeting = _meeting;
     }
 
     public open(apiUrl: string) {
@@ -120,6 +123,7 @@ export class Meeting {
             if (this.workerModel.MeetingUpdate != eventChange.MeetingUpdate) {
                 this.meetingEvents.emit("meeting");
                 this.workerModel.MeetingUpdate = eventChange.MeetingUpdate;
+                await this.getMeetingInfo();
             }
         };
     }
@@ -162,7 +166,8 @@ export class Meeting {
     }
 
     public async getMeetingInfo() {
-        return <MeetingModel>await this.appService.GetLiveMeetingInfo({ 'MeetingUserId': this.activeUser.Id });
+        this.meeting =  <MeetingModel>await this.appService.GetLiveMeetingInfo({ 'MeetingUserId': this.activeUser.Id });
+        return this.meeting;
     }
 
     private async createMediaServer(_MediaServerModel: MediaServerModel) {
@@ -202,9 +207,12 @@ export class Meeting {
             console.error("no socket connection " + type);
         }
     }
-    public switchSpeaker(speaker: MediaDeviceInfo, videoElement: any) {
+    public switchSpeaker(speaker: MediaDeviceInfo) {
         try {
-            videoElement.setSinkId(speaker.deviceId);
+            this.connections.forEach(element => {
+                element.changeSpeakerEventEmit(speaker.deviceId);
+            });
+            this.activeSpeaker = speaker.deviceId;
         } catch (error: any) {
             throw new ConusmaException("switchSpeaker", "Cannot switch speaker", error);
         }
@@ -235,6 +243,10 @@ export class Meeting {
                     this.audioInputs.push(deviceInfo);
                 } else if (deviceInfo.kind === 'audiooutput') {
                     this.audioOutputs.push(deviceInfo);
+                    if(deviceInfo.label.toLowerCase().includes("default"))
+                    {
+                        this.activeSpeaker = deviceInfo.deviceId;
+                    }
                 } else if (deviceInfo.kind === 'videoinput') {
                     this.videoInputs.push(deviceInfo)
                 }
@@ -332,8 +344,6 @@ export class Meeting {
             }
             await this.updateStreamProducerTrack(false, true, this.localStream);
         } catch (error: any) {
-            this.activeUser.Mic = false;
-            this.activeUser.ActiveMic = false;
             throw new ConusmaException("enableAudio", "can not read microphone, please check exception.", error);
         }
     }
@@ -384,8 +394,6 @@ export class Meeting {
             }
             await this.updateStreamProducerTrack(true, false, this.localStream);
         } catch (error: any) {
-            this.activeUser.Camera = false;
-            this.activeUser.ActiveCamera = false;
             throw new ConusmaException("enableVideo", "can not read camera, please check exception.", error);
         }
     }
@@ -502,7 +510,7 @@ export class Meeting {
         {
             throw new ConusmaException("createConnection","active connection is not null");
         }
-        this.activeConnection  = new Connection(this.activeUser);
+        this.activeConnection  = new Connection(this.activeUser,this.activeSpeaker);
         this.activeConnection.isProducer = false;
         this.connections.push(this.activeConnection);
 
@@ -555,7 +563,7 @@ export class Meeting {
     {
         if( this.connections.find(us => us.user.Id == user.Id)  == null)
         {
-            var connection: Connection = new Connection(user);
+            var connection: Connection = new Connection(user,this.activeSpeaker);
             connection.isProducer = false;
             this.connections.push(connection);
             return connection;
@@ -596,5 +604,27 @@ export class Meeting {
         var mediaServer = await this.createMediaServer(mediaServerModel);
         connection.setMediaServer(mediaServer);
         return connection;
+    }
+    public async changeMicrophoneState(state:boolean)
+    {
+        try {
+            var track:MediaStreamTrack = this.activeConnection.stream.getAudioTracks()[0];
+            track.enabled = state;
+            this.activeUser.ActiveMic = state;
+            await this.appService.UpdateMeetingUser(this.activeUser);
+        } catch (error:any) {
+            throw new ConusmaException("changeMicrophoneState","unknown error",error);
+        }
+    }
+    public async changeVideoState(state:boolean)
+    {
+        try {
+            var track:MediaStreamTrack = this.activeConnection.stream.getVideoTracks()[0];
+            track.enabled = state;
+            this.activeUser.ActiveCamera = state;
+            await this.appService.UpdateMeetingUser(this.activeUser);
+        } catch (error:any) {
+            throw new ConusmaException("changeVideoState","unknown error",error);
+        }
     }
 }

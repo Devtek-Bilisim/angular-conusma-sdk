@@ -36,7 +36,7 @@ export class AppService {
     }
   }
   public httpPost(service: string, data: any): Observable<any> {
-    var token = localStorage.getItem("JWT_TOKEN");
+    var token = this.getJwtToken();
     if(token != null && token != undefined)
     {
       var headers = new HttpHeaders({ "Content-Type": "application/json; charset=utf-8","Authorization": "Bearer " + token });
@@ -65,9 +65,10 @@ export class AppService {
     });
   }
   public async isMeetingValid(data:any) {
-    return await this.httpPost("Meeting/MeetingIsValid" , this).toPromise().then((res)=>{
+    return await this.httpPost("Meeting/MeetingIsValid" , data).toPromise().then((res)=>{
       return res;
     },err=>{
+      console.log(err);
       throw new ConusmaException(err.error.type,err.err.value);
     });
   }

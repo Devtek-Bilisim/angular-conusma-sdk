@@ -9,13 +9,14 @@ import { MeetingModel } from "./Models/meeting-model";
 import { MediaServerModel } from "./Models/media-server-model";
 import { WorkerDataModel } from "./Component/worker-data-model";
 import * as EventEmitter from "events";
+import { MeetingStatusEnum } from "./Enums/meeting-status";
 
 export class Meeting {
     public activeUser: MeetingUserModel;
     public meetingWorker: Worker = null;
     public mediaServers: MediaServer[] = new Array();
     public connections: Connection[] = new Array();
-    public userList:MeetingUserModel[] = new Array();
+    public userList: MeetingUserModel[] = new Array();
     private appService: AppService;
 
     public isClosedRequestRecieved: boolean = false;
@@ -35,9 +36,9 @@ export class Meeting {
 
     private workerModel: WorkerDataModel = new WorkerDataModel();
     public meetingEvents: EventEmitter = new EventEmitter();
-    public meeting:MeetingModel = null;
-    public activeSpeaker:string="default";
-    constructor(activeUser: MeetingUserModel, _meeting:MeetingModel,appService: AppService) {
+    public meeting: MeetingModel = null;
+    public activeSpeaker: string = "default";
+    constructor(activeUser: MeetingUserModel, _meeting: MeetingModel, appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
         this.activeUser.Camera = false;
@@ -58,7 +59,7 @@ export class Meeting {
         }
     }
     private async ReactionsControl() {
-        
+
         this.connections.forEach(connection => {
             connection.reactionsChangeControl();
         });
@@ -70,10 +71,8 @@ export class Meeting {
             for (var i = 0; i < this.userList.length; i++) {
                 if (this.connections.find(us => us.user.Id == this.userList[i].Id) == null) {
                     var connectionConsumer = await this.createConsumerConnection(this.userList[i]);
-                    if(connectionConsumer != null)
-                    {
-                        if(this.userList[i].Camera || this.userList[i].Mic)
-                        {
+                    if (connectionConsumer != null) {
+                        if (this.userList[i].Camera || this.userList[i].Mic) {
                             await this.consume(connectionConsumer);
                         }
                     }
@@ -88,12 +87,10 @@ export class Meeting {
             for (var d = 0; d < deleteUserList.length; d++) {
                 await this.closeConsumer(deleteUserList[d]);
             }
-            for(var u = 0 ; u < this.connections.length ; u++)
-            {
+            for (var u = 0; u < this.connections.length; u++) {
                 var user = this.userList.find(us => us.Id == this.connections[u].user.Id);
-                if(user != null)
-                {
-                   this.connections[u].user = user;
+                if (user != null) {
+                    this.connections[u].user = user;
                 }
             }
 
@@ -166,7 +163,7 @@ export class Meeting {
     }
 
     public async getMeetingInfo() {
-        this.meeting =  <MeetingModel>await this.appService.GetLiveMeetingInfo({ 'MeetingUserId': this.activeUser.Id });
+        this.meeting = <MeetingModel>await this.appService.GetLiveMeetingInfo({ 'MeetingUserId': this.activeUser.Id });
         return this.meeting;
     }
 
@@ -243,8 +240,7 @@ export class Meeting {
                     this.audioInputs.push(deviceInfo);
                 } else if (deviceInfo.kind === 'audiooutput') {
                     this.audioOutputs.push(deviceInfo);
-                    if(deviceInfo.label.toLowerCase().includes("default"))
-                    {
+                    if (deviceInfo.label.toLowerCase().includes("default")) {
                         this.activeSpeaker = deviceInfo.deviceId;
                     }
                 } else if (deviceInfo.kind === 'videoinput') {
@@ -378,6 +374,7 @@ export class Meeting {
                 throw new Error("video stream is null");
             }
             this.activeUser.Camera = true;
+            this.activeUser.ShareScreen = false;
             this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
             if (this.localStream != null) {
                 if (this.localStream.getVideoTracks().length > 0) {
@@ -397,7 +394,6 @@ export class Meeting {
             throw new ConusmaException("enableVideo", "can not read camera, please check exception.", error);
         }
     }
-
     public async enableScreenShare() {
         try {
             const displayMediaOptions = {
@@ -414,6 +410,9 @@ export class Meeting {
             if (newStream == null) {
                 throw new Error("share screen stream is null");
             }
+            newStream.getVideoTracks()[0].onended = async()=>{
+                await this.disableScreenShare();
+            };
             if (this.localStream != null) {
                 if (this.localStream.getVideoTracks().length > 0) {
                     this.localStream.removeTrack(this.localStream.getVideoTracks()[0]);
@@ -427,8 +426,23 @@ export class Meeting {
                 this.localStream = newStream;
             }
             await this.updateStreamProducerTrack(true, false, this.localStream);
+            this.activeUser.ShareScreen = true;
+            this.appService.UpdateMeetingUser(this.activeUser);
         } catch (error: any) {
             throw new ConusmaException("enableScreenShare", "can not read screen, please check exception.", error);
+        }
+    }
+    public async disableScreenShare()
+    {
+        try {
+            this.activeUser.ShareScreen = false;
+            this.appService.UpdateMeetingUser(this.activeUser);
+            if(this.activeUser.ActiveCamera)
+            {
+                await this.enableVideo();
+            }
+        } catch (error: any) {
+            throw new ConusmaException("disableScreenShare ", "can not read screen, please check exception.", error);
         }
     }
     private async updateStreamProducerTrack(video: boolean = false, audio: boolean = false, stream: MediaStream) {
@@ -471,7 +485,7 @@ export class Meeting {
         }
     }
 
-   
+
     public async getAllUsers() {
         try {
             if (this.activeUser != null) {
@@ -504,14 +518,18 @@ export class Meeting {
             throw new ConusmaException("getProducerUsers", "Unable to fetch producer user list, please check detail exception");
         }
     }
-    public async createConnection()
-    {
-        if(this.activeConnection != null)
-        {
-            throw new ConusmaException("createConnection","active connection is not null");
+    public async createConnection() {
+        if (this.activeConnection != null) {
+            throw new ConusmaException("createConnection", "active connection is not null");
         }
-        this.activeConnection  = new Connection(this.activeUser,this.activeSpeaker);
+
+        this.activeConnection = new Connection(this.activeUser, this.activeSpeaker);
         this.activeConnection.isProducer = false;
+        if (this.activeUser.UserType == 2) {
+            if (this.activeUser.UserId == this.meeting.OwnerId) {
+                this.activeConnection.isRoomOwner = true;
+            }
+        }
         this.connections.push(this.activeConnection);
 
     }
@@ -559,11 +577,9 @@ export class Meeting {
         }
         return arr;
     }
-    public async createConsumerConnection(user: MeetingUserModel)
-    {
-        if( this.connections.find(us => us.user.Id == user.Id)  == null)
-        {
-            var connection: Connection = new Connection(user,this.activeSpeaker);
+    public async createConsumerConnection(user: MeetingUserModel) {
+        if (this.connections.find(us => us.user.Id == user.Id) == null) {
+            var connection: Connection = new Connection(user, this.activeSpeaker);
             connection.isProducer = false;
             this.connections.push(connection);
             return connection;
@@ -571,7 +587,7 @@ export class Meeting {
         return null;
     }
     public async consume(connection: Connection) {
-         connection = await this.createConnectionForConsumer(connection);
+        connection = await this.createConnectionForConsumer(connection);
         try {
             connection.transport = await connection.mediaServer.consume(connection.user);
             connection.stream = connection.transport.RemoteStream;
@@ -605,26 +621,84 @@ export class Meeting {
         connection.setMediaServer(mediaServer);
         return connection;
     }
-    public async changeMicrophoneState(state:boolean)
-    {
+    public async changeMicrophoneState(state: boolean) {
         try {
-            var track:MediaStreamTrack = this.activeConnection.stream.getAudioTracks()[0];
+            var track: MediaStreamTrack = this.activeConnection.stream.getAudioTracks()[0];
             track.enabled = state;
             this.activeUser.ActiveMic = state;
             await this.appService.UpdateMeetingUser(this.activeUser);
-        } catch (error:any) {
-            throw new ConusmaException("changeMicrophoneState","unknown error",error);
+        } catch (error: any) {
+            throw new ConusmaException("changeMicrophoneState", "unknown error", error);
         }
     }
-    public async changeVideoState(state:boolean)
-    {
+    public async changeVideoState(state: boolean) {
         try {
-            var track:MediaStreamTrack = this.activeConnection.stream.getVideoTracks()[0];
+            var track: MediaStreamTrack = this.activeConnection.stream.getVideoTracks()[0];
             track.enabled = state;
             this.activeUser.ActiveCamera = state;
             await this.appService.UpdateMeetingUser(this.activeUser);
-        } catch (error:any) {
-            throw new ConusmaException("changeVideoState","unknown error",error);
+        } catch (error: any) {
+            throw new ConusmaException("changeVideoState", "unknown error", error);
+        }
+    }
+    public async changeMeetingStatus(status: MeetingStatusEnum) {
+        try {
+            if (this.meeting.MeetingStatus != status) {
+                this.meeting.MeetingStatus = status;
+                await this.appService.LiveUpdateMeetingFeatures(this.activeUser.Id, this.meeting);
+            }
+        } catch (error: any) {
+            throw new ConusmaException("changeMeetingStatus", "not change status", error);
+        }
+    }
+    public async changeParticipantApprovalSecurityStatus(status: boolean) {
+        try {
+            if (this.meeting.ParticipantApproval != status) {
+                this.meeting.ParticipantApproval = status;
+                await this.appService.LiveUpdateMeetingFeatures(this.activeUser.Id, this.meeting);
+            }
+        } catch (error: any) {
+            throw new ConusmaException("changeParticipantApprovalStatus", "not change status", error);
+        }
+    }
+    public async changeShareScreenSecurityStatus(status: boolean) {
+        try {
+            if (this.meeting.ShareScreen != status) {
+                this.meeting.ShareScreen = status;
+                await this.appService.LiveUpdateMeetingFeatures(this.activeUser.Id, this.meeting);
+            }
+        } catch (error: any) {
+            throw new ConusmaException("changeShareScreenSecurityStatus", "not change status", error);
+        }
+    }
+    public async changeChatSecurityStatus(status: boolean) {
+        try {
+            if (this.meeting.Chat != status) {
+                this.meeting.Chat = status;
+                await this.appService.LiveUpdateMeetingFeatures(this.activeUser.Id, this.meeting);
+            }
+        } catch (error: any) {
+            throw new ConusmaException("changeChatSecurityStatus", "not change status", error);
+        }
+    }
+    public async changeChatSaveSecurityStatus(status: boolean) {
+        try {
+            if (this.meeting.ChatSave != status) {
+                this.meeting.ChatSave = status;
+                await this.appService.LiveUpdateMeetingFeatures(this.activeUser.Id, this.meeting);
+            }
+        } catch (error: any) {
+            throw new ConusmaException("changeChatSaveSecurityStatus", "not change status", error);
+        }
+    }
+    public async changeMeetingNameAndPassword(name: string, password: string) {
+        try {
+            this.meeting.Name = name;
+            this.meeting.Password = password;
+            await this.appService.LiveUpdateMeetingFeatures(this.activeUser.Id, this.meeting);
+
+        } catch (error: any) {
+            throw new ConusmaException("changeMeetingNameAndPassword", "not change name and password", error);
         }
     }
 }

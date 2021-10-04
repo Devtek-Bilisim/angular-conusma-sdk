@@ -16,7 +16,7 @@ export class Connection {
     public isIntersecting:boolean = false;
     public applauseEmoji: any;
     public thumbEmoji: any;
-    
+    public isRoomOwner:boolean = false;
     public isAudioActive = true;
     public isVideoActive = true;
     public lastReactionsTime = "";

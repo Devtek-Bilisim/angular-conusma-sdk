@@ -17,10 +17,6 @@ export class MeetingModel {
     public AddedDate:string = "";
     public ModifiedDate:string = "";
     public Id:number = 0;
+    public MeetingStatus:number = 0;
 }
-export enum MeetingStatusEnum
-{
-    active = 1,
-    end = 2,
-    locked = 3
-}
+

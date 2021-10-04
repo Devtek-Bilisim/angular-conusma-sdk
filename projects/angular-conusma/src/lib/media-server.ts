@@ -96,7 +96,7 @@ export class MediaServer {
 
     public async createProducer(localStream: MediaStream, kind: string) {
         try {
-            if (kind == 'video') {
+            if (kind == 'video' && this.videoProducer == null) {
                 const videoTrack = localStream.getVideoTracks()[0];
                 this.videoProducer = await this.producerTransport.produce({
                     track: videoTrack,
@@ -112,7 +112,7 @@ export class MediaServer {
                     appData: { mediaTag: 'video' }
                 });
             }
-            else if (kind == 'audio') {
+            else if (kind == 'audio' && this.audioProducer == null) {
                 this.audioProducer = await this.producerTransport.produce({
                     track: localStream.getAudioTracks()[0],
                     appData: { mediaTag: 'audio' }

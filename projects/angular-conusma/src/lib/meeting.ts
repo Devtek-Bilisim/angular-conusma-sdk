@@ -127,6 +127,7 @@ export class Meeting {
 
     public async close(sendCloseRequest: boolean = false) {
         try {
+            this.isClosedRequestRecieved = true;
             this.activeConnection = null;
             if (this.meetingWorker != null) {
                 this.meetingWorker.terminate();
@@ -137,7 +138,10 @@ export class Meeting {
                 else {
                     item.mediaServer.closeProducer();
                 }
-                item.stream.getTracks().forEach((track: MediaStreamTrack) => { track.stop(); });
+                if(item.stream != null)
+                {
+                    item.stream.getTracks().forEach((track: MediaStreamTrack) => { track.stop(); });
+                }
             }
             for (var i = 0; i < this.connections.length; i++) {
                 if (this.connections[i].mediaServer.socket && this.connections[i].mediaServer.socket.connected) {
@@ -145,8 +149,6 @@ export class Meeting {
                 }
                 this.removeItemOnce(this.connections, i);
             }
-            this.isClosedRequestRecieved = true;
-
             if (sendCloseRequest) {
                 var closeData = { 'MeetingUserId': this.activeUser.Id };
                 await this.appService.LiveClose(closeData);

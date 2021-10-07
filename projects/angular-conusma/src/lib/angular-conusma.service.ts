@@ -101,13 +101,25 @@ export class AngularConusmaService {
 
 
   public IsUser() {
-    let userData = sessionStorage.getItem("UserData");
-    if (userData != null) {
-      var user = JSON.parse(userData);
-      if (user.User_Type == "1") {
-        return true;
+    let rememberme = localStorage.getItem("rememberme");
+    if (rememberme) {
+      let userData = localStorage.getItem("UserData");
+      if (userData != null) {
+        var user = JSON.parse(userData);
+        if (user.User_Type == "1") {
+          return true;
+        }
+      }
+    } else {
+      let userData = sessionStorage.getItem("UserData");
+      if (userData != null) {
+        var user = JSON.parse(userData);
+        if (user.User_Type == "1") {
+          return true;
+        }
       }
     }
+   
     return false;
   }
 
@@ -135,6 +147,9 @@ export class AngularConusmaService {
     localStorage.removeItem('rememberme');
     sessionStorage.removeItem("JWT_TOKEN");
     sessionStorage.removeItem('isLoggedin');
+    localStorage.removeItem("UserData");
+    this.user = null;
+    this.publicUser = null;
   }
 
   async presentAlert(message: string, header: string = "Error", url: string = "", callback = () => { }) {

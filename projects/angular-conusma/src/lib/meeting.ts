@@ -703,4 +703,16 @@ export class Meeting {
             throw new ConusmaException("changeMeetingNameAndPassword", "not change name and password", error);
         }
     }
+    public async sendReaction(reaction:string)
+    {
+        try {
+            var data ={
+                "meetingUserId": this.activeUser.Id,
+                "reaction": reaction
+              }
+            await this.appService.Reactions(data);
+        } catch (error: any) {
+            throw new ConusmaException("sendReaction", "not send Reaction", error);
+        }
+    }
 }

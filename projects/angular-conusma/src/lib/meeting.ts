@@ -10,6 +10,7 @@ import { MediaServerModel } from "./Models/media-server-model";
 import { WorkerDataModel } from "./Component/worker-data-model";
 import * as EventEmitter from "events";
 import { MeetingStatusEnum } from "./Enums/meeting-status";
+import { ChatModel } from "./Models/chat-model";
 
 export class Meeting {
     public activeUser: MeetingUserModel;
@@ -116,6 +117,7 @@ export class Meeting {
             if (this.workerModel.ChatUpdates != eventChange.ChatUpdates) {
                 this.meetingEvents.emit("chat");
                 this.workerModel.ChatUpdates = eventChange.ChatUpdates;
+                await this.getNewChatMessage();
             }
             if (this.workerModel.MeetingUpdate != eventChange.MeetingUpdate) {
                 this.meetingEvents.emit("meeting");
@@ -167,6 +169,25 @@ export class Meeting {
     public async getMeetingInfo() {
         this.meeting = <MeetingModel>await this.appService.GetLiveMeetingInfo({ 'MeetingUserId': this.activeUser.Id });
         return this.meeting;
+    }
+    private async getNewChatMessage() {
+       var messages = <ChatModel[]>await this.appService.GetChatMessages({ 'MeetingUserId': this.activeUser.Id });
+       console.log(messages);
+       messages.forEach(message => {
+           if(message.GroupMessage)
+           {
+               this.activeConnection.chatMessages.push(message);
+           }
+           else
+           {
+            var connection = this.connections.find(us => us.user.Id != this.activeConnection.user.Id && (us.user.Id == message.From || us.user.Id == message.To ));
+            if(connection != null)
+            {
+                connection.chatMessages.push(message);
+            }
+           }
+          
+       });
     }
 
     private async createMediaServer(_MediaServerModel: MediaServerModel) {
@@ -713,6 +734,33 @@ export class Meeting {
             await this.appService.Reactions(data);
         } catch (error: any) {
             throw new ConusmaException("sendReaction", "not send Reaction", error);
+        }
+    }
+    public async sendChatMessage(to:string,message:string)
+    {
+        try {
+            var chat:ChatModel = new ChatModel();
+            chat.From = this.activeUser.Id;
+            chat.To = to;
+            chat.Message = message;
+            chat.Time = new Date().toLocaleDateString();
+            if(chat.To == null ||chat.To == "")
+            {
+                this.activeConnection.chatMessages.push(chat);
+            }
+            else
+            {
+                var connection = this.connections.find(us => us.user.Id == chat.To);
+                if(connection != null)
+                {
+                    connection.chatMessages.push(chat);
+                }
+                
+            }
+            await this.appService.SendChatMessage(chat);
+           
+        } catch (error: any) {
+            throw new ConusmaException("sendChatMessage", "not send chat message", error);
         }
     }
 }

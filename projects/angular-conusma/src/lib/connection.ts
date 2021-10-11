@@ -2,6 +2,7 @@ import { MeetingUserModel } from "./Models/meeting-user-model";
 import { MediaServer } from "./media-server";
 import { ConusmaException } from "./Exceptions/conusma-exception";
 import { EventEmitter } from "@angular/core";
+import { ChatModel } from "./Models/chat-model";
 export class Connection {
     user:MeetingUserModel;
     mediaServer:MediaServer;
@@ -21,6 +22,7 @@ export class Connection {
     public isVideoActive = true;
     public lastReactionsTime = "";
     public activeSpekar:string="";
+    public chatMessages:ChatModel[] = [];
     constructor(user:MeetingUserModel,_activeSpeaker:string="Default") {
         this.user = user;
         this.activeSpekar = _activeSpeaker;

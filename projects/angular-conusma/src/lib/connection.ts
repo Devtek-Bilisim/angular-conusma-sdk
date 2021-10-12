@@ -44,8 +44,8 @@ export class Connection {
     public reactionsChangeControl()
     {
         try {
-            var now = new Date();
-            var reactionDate = new Date(this.user.ReactionTime);
+            var now =  Date.now();
+            var reactionDate = Date.parse(this.user.ReactionTime);
             if(reactionDate > now)
             {
                 if( this.user.ReactionTime!= this.lastReactionsTime)

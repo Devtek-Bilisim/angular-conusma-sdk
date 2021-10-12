@@ -91,6 +91,7 @@ export class Meeting {
             for (var u = 0; u < this.connections.length; u++) {
                 var user = this.userList.find(us => us.Id == this.connections[u].user.Id);
                 if (user != null) {
+                    console.log("update user");
                     this.connections[u].user = user;
                 }
             }

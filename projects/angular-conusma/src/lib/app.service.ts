@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from "@angular/common/http
 import { Observable } from "rxjs";
 import { ConusmaException } from "../public-api";
 import { ConusmaRestApiException } from "./Exceptions/conusma-restapi-exception";
+import { SuccessApiMesage } from "./Models/success-api-message";
 
 export class AppService {
   private appId: string = "";
@@ -449,7 +450,7 @@ export class AppService {
 
   public async signup(data: any){
     return await this.httpPost("User/AddUser", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage>res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });
@@ -457,23 +458,30 @@ export class AppService {
 
   public async signupConfirm(data: any) {
     return await this.httpPost("User/EMailVerificationCode", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage> res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });
   }
 
-  public async forgotPassword(data: any){
+  public async forgotPassword(email: string){
+    var data = {
+      'EMail':email
+    };
     return await this.httpPost("User/ForgotPassword", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage>res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });
   }
 
-  public async controlForgotPasswordCode(data: any){
+  public async controlForgotPasswordCode(code:string,password:string){
+    var data = {
+      'Password':password,
+      'Code':code
+    };
     return await this.httpPost("User/ControlForgotPasswordCode", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage>res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });
@@ -481,7 +489,7 @@ export class AppService {
 
   public async changePassword(data: any) {
     return await this.httpPost("User/ChangePassword", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage>res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });

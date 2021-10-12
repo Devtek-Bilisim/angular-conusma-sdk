@@ -1,12 +1,12 @@
 import { AppService } from "./app.service";
 import { ConusmaException } from "./Exceptions/conusma-exception";
 import { GuestUserModel } from "./Models/guest-user-model";
-import { MeetingModel } from "./Models/meeting-model";
 import { MeetingUserModel } from "./Models/meeting-user-model";
 import { Meeting } from "./meeting";
 import { Store } from "@ngrx/store";
 import { Observable } from "rxjs";
 import { updateMeetingUser } from "./meeting.actions";
+import { MeetingModel } from "./Models/meeting-model";
 
 export class GuestUser {
   private appService: AppService;

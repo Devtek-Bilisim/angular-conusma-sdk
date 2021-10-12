@@ -1,8 +1,6 @@
 
 export class MeetingModel {
   
-    constructor() {
-    }
     public InviteCode:string = "";
     public MeetingId:string = "";
     public Password:string = "";

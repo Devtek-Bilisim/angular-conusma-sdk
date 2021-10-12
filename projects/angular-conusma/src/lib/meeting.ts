@@ -5,12 +5,12 @@ import { ConusmaException } from "./Exceptions/conusma-exception";
 
 import { MediaServer } from "./media-server";
 import { Connection } from "./connection";
-import { MeetingModel } from "./Models/meeting-model";
 import { MediaServerModel } from "./Models/media-server-model";
 import { WorkerDataModel } from "./Component/worker-data-model";
 import * as EventEmitter from "events";
 import { MeetingStatusEnum } from "./Enums/meeting-status";
 import { ChatModel } from "./Models/chat-model";
+import { MeetingModel } from "./Models/meeting-model";
 
 export class Meeting {
     public activeUser: MeetingUserModel;

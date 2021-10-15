@@ -237,10 +237,13 @@ export class AngularConusmaService {
       var token = this.appService.getJwtToken();
       if (token != undefined && token != null) {
         var user_data = await this.appService.isTokenValid();
-        this.stroageSaveUserData(user_data);
-        this.user = new User(this.appService);
-        this.user.userInfo = user_data;
-        return true;
+        if(user_data.User_Type == 1)
+        {
+          this.stroageSaveUserData(user_data);
+          this.user = new User(this.appService);
+          this.user.userInfo = user_data;
+          return true;
+        }
       }
     } catch (error) {
       return false;

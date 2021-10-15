@@ -141,8 +141,7 @@ export class Meeting {
                 else {
                     item.mediaServer.closeProducer();
                 }
-                if(item.stream != null)
-                {
+                if (item.stream != null) {
                     item.stream.getTracks().forEach((track: MediaStreamTrack) => { track.stop(); });
                 }
             }
@@ -172,23 +171,20 @@ export class Meeting {
         return this.meeting;
     }
     private async getNewChatMessage() {
-       var messages = <ChatModel[]>await this.appService.GetChatMessages({ 'MeetingUserId': this.activeUser.Id });
-       console.log(messages);
-       messages.forEach(message => {
-           if(message.GroupMessage)
-           {
-               this.activeConnection.chatMessages.push(message);
-           }
-           else
-           {
-            var connection = this.connections.find(us => us.user.Id != this.activeConnection.user.Id && (us.user.Id == message.From || us.user.Id == message.To ));
-            if(connection != null)
-            {
-                connection.chatMessages.push(message);
+        var messages = <ChatModel[]>await this.appService.GetChatMessages({ 'MeetingUserId': this.activeUser.Id });
+        console.log(messages);
+        messages.forEach(message => {
+            if (message.GroupMessage) {
+                this.activeConnection.chatMessages.push(message);
             }
-           }
-          
-       });
+            else {
+                var connection = this.connections.find(us => us.user.Id != this.activeConnection.user.Id && (us.user.Id == message.From || us.user.Id == message.To));
+                if (connection != null) {
+                    connection.chatMessages.push(message);
+                }
+            }
+
+        });
     }
 
     private async createMediaServer(_MediaServerModel: MediaServerModel) {
@@ -276,6 +272,64 @@ export class Meeting {
     }
     public async switchCamera(camera: MediaDeviceInfo) {
         await this.enableVideo(camera);
+    }
+    public async switchCameraMobile()
+    {
+        try {
+            var faceMode = "user";
+         if(this.localStream != null && this.localStream.getVideoTracks().length > 0)
+         {
+             var activeFaceMode = this.localStream.getVideoTracks()[0].getSettings().facingMode;
+             if(activeFaceMode == "user")
+             {
+                faceMode = "environment";
+             }
+         }
+         var videoConstraints: any = {
+            "width": {
+                "min": "320",
+                "ideal": "480",
+                "max": "640"
+            },
+            "height": {
+                "min": "240",
+                "ideal": "360",
+                "max": "480"
+            },
+            "frameRate": "10",
+            "faceingMode":faceMode
+        };
+        const constraints: any = {
+            audio: false,
+            video: videoConstraints
+        };
+        alert(constraints);
+        const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (newStream == null || newStream.getVideoTracks().length < 1) {
+            throw new Error("video stream is null");
+        }
+        this.activeUser.Camera = true;
+        this.activeUser.ShareScreen = false;
+        this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
+        if (this.localStream != null) {
+            if (this.localStream.getVideoTracks().length > 0) {
+                this.localStream.removeTrack(this.localStream.getVideoTracks()[0]);
+                this.localStream.addTrack(newStream.getVideoTracks()[0]);
+            }
+            else {
+                this.localStream.addTrack(newStream.getVideoTracks()[0]);
+            }
+        }
+        else {
+            this.localStream = newStream;
+        }
+        await this.updateStreamProducerTrack(true, false, this.localStream);
+            
+        } catch (error:any) {
+            throw new ConusmaException("switchCameraMobile", "Cannot switch camera", error);
+
+        }
+       
     }
     public async switchMicrophone(microphone: MediaDeviceInfo) {
         await this.enableAudio(microphone);
@@ -434,7 +488,7 @@ export class Meeting {
             if (newStream == null) {
                 throw new Error("share screen stream is null");
             }
-            newStream.getVideoTracks()[0].onended = async()=>{
+            newStream.getVideoTracks()[0].onended = async () => {
                 await this.disableScreenShare();
             };
             if (this.localStream != null) {
@@ -456,13 +510,11 @@ export class Meeting {
             throw new ConusmaException("enableScreenShare", "can not read screen, please check exception.", error);
         }
     }
-    public async disableScreenShare()
-    {
+    public async disableScreenShare() {
         try {
             this.activeUser.ShareScreen = false;
             this.appService.UpdateMeetingUser(this.activeUser);
-            if(this.activeUser.ActiveCamera)
-            {
+            if (this.activeUser.ActiveCamera) {
                 await this.enableVideo();
             }
         } catch (error: any) {
@@ -725,41 +777,36 @@ export class Meeting {
             throw new ConusmaException("changeMeetingNameAndPassword", "not change name and password", error);
         }
     }
-    public async sendReaction(reaction:string)
-    {
+    public async sendReaction(reaction: string) {
         try {
-            var data ={
+            var data = {
                 "meetingUserId": this.activeUser.Id,
                 "reaction": reaction
-              }
+            }
             await this.appService.Reactions(data);
         } catch (error: any) {
             throw new ConusmaException("sendReaction", "not send Reaction", error);
         }
     }
-    public async sendChatMessage(to:string,message:string)
-    {
+    public async sendChatMessage(to: string, message: string) {
         try {
-            var chat:ChatModel = new ChatModel();
+            var chat: ChatModel = new ChatModel();
             chat.From = this.activeUser.Id;
             chat.To = to;
             chat.Message = message;
-            chat.Time = new Date().toLocaleDateString();
-            if(chat.To == null ||chat.To == "")
-            {
+            chat.Time = new Date().toISOString();
+            if (chat.To == null || chat.To == "") {
                 this.activeConnection.chatMessages.push(chat);
             }
-            else
-            {
+            else {
                 var connection = this.connections.find(us => us.user.Id == chat.To);
-                if(connection != null)
-                {
+                if (connection != null) {
                     connection.chatMessages.push(chat);
                 }
-                
+
             }
             await this.appService.SendChatMessage(chat);
-           
+
         } catch (error: any) {
             throw new ConusmaException("sendChatMessage", "not send chat message", error);
         }

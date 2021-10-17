@@ -284,27 +284,9 @@ export class Meeting {
              {
                 faceMode = "environment";
              }
+             this.localStream.getVideoTracks()[0].stop();
          }
-         var videoConstraints: any = {
-            "width": {
-                "min": "320",
-                "ideal": "480",
-                "max": "640"
-            },
-            "height": {
-                "min": "240",
-                "ideal": "360",
-                "max": "480"
-            },
-            "frameRate": "10",
-            "faceingMode":faceMode
-        };
-        const constraints: any = {
-            audio: false,
-            video: videoConstraints
-        };
-        alert(constraints);
-        const newStream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const newStream: MediaStream = await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:faceMode}});
         if (newStream == null || newStream.getVideoTracks().length < 1) {
             throw new Error("video stream is null");
         }

@@ -7,8 +7,8 @@ export class MediaServer {
     id: number = 0;
     socket: any = null;
     device: any = null;
-    producerTransport:any;
-    videoProducer:any;
+    producerTransport:any = null;
+    videoProducer:any = null;
     audioProducer:any;
     consumerTransports:any = [];
 
@@ -33,13 +33,16 @@ export class MediaServer {
     }
     public async produce(user:MeetingUserModel, localStream:MediaStream) {
         try { 
-            await this.createProducerTransport();
-            if (localStream.getVideoTracks().length > 0) {
+            if(this.producerTransport == null)
+            {
+                await this.createProducerTransport();
+            }
+            if (localStream.getVideoTracks().length > 0 && this.videoProducer == null) {
                 await this.createProducer(localStream, 'video');
                 user.Camera = true;
                 user.ActiveCamera = true;
             }
-            if (localStream.getAudioTracks().length > 0) {
+            if (localStream.getAudioTracks().length > 0 && this.audioProducer == null) {
                 await this.createProducer(localStream, 'audio');
                 user.Mic = true;
                 user.ActiveMic = true;
@@ -152,9 +155,16 @@ export class MediaServer {
 
     public async consume(producerUser: MeetingUserModel) {
         try {
-            var result = await this.createConsumerTransport(this, producerUser);
-            this.consumerTransports.push(result);
-            return result;
+            if(this.consumerTransports.find((us:any) => us.MeetingUserId == producerUser.Id) == null)
+            {
+                var result = await this.createConsumerTransport(this, producerUser);
+                this.consumerTransports.push(result);
+                return result;
+            }
+            else
+            {
+                return this.consumerTransports.find((us:any) => us.MeetingUserId == producerUser.Id);
+            }
         } catch (error:any) {
             throw new ConusmaException("consume", producerUser.Id + "The stream of the user is currently not captured. User connection information is out of date.", error);
         }
@@ -179,31 +189,31 @@ export class MediaServer {
             consumerTransport.Camera = user.Camera;
             consumerTransport.Mic = user.Mic;
             consumerTransport.ShareScreen = user.ShareScreen;
-            console.log("createConsumerTransport creating the consumer.");
-            if (user.Camera || user.ShareScreen) {
-                await this.addConsumer(consumerTransport, "video");
-            }
-
-            if (user.Mic) {
-                await this.addConsumer(consumerTransport, "audio");
-            }
+            console.log("createConsumerTransport created the consumer transport.");
             return consumerTransport;
         } else {
             throw new ConusmaException("createConsumerTransport", "No socket connection.");
         }
     }
 
-    private async addConsumer(consumerTransport: any, kind: string) {
+    public async addConsumer(consumerTransport: any, kind: string) {
         if (consumerTransport != null) {
-            if (kind == "video") {
-                consumerTransport.videoConsumer = await this.consumeTransport(consumerTransport, "video");
-                this.resumeConsumer(consumerTransport, "video");
-                consumerTransport.RemoteStream.addTrack(consumerTransport.videoConsumer.track);
+            if (kind == "video" ) {
+                if(consumerTransport.videoConsumer == null)
+                {
+                    consumerTransport.videoConsumer = await this.consumeTransport(consumerTransport, "video");
+                    this.resumeConsumer(consumerTransport, "video");
+                    consumerTransport.RemoteStream.addTrack(consumerTransport.videoConsumer.track);
+                }
             } else {
-                consumerTransport.audioConsumer = await this.consumeTransport(consumerTransport, "audio");
-                this.resumeConsumer(consumerTransport, "audio");
-                consumerTransport.RemoteStream.addTrack(consumerTransport.audioConsumer.track);
-                consumerTransport.audioConsumer.resume();
+                if(consumerTransport.audioConsumer == null)
+                {
+                    consumerTransport.audioConsumer = await this.consumeTransport(consumerTransport, "audio");
+                    this.resumeConsumer(consumerTransport, "audio");
+                    consumerTransport.RemoteStream.addTrack(consumerTransport.audioConsumer.track);
+                    consumerTransport.audioConsumer.resume();
+                }
+              
             }
         }
     }

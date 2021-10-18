@@ -48,7 +48,14 @@ export class Meeting {
         this.activeUser.ActiveMic = false;
         this.meeting = _meeting;
     }
-
+    public sendBeacon()
+    {
+        let url = this.appService.apiUrl + "/Live/CloseBeacon";
+        let data = { 'MeetingUserId': this.activeUser.Id, 'Token': this.appService.getJwtToken() }
+        if (navigator.sendBeacon(url, JSON.stringify(data))) {
+            console.log("sended beacon close");
+        }
+    }
     public open(apiUrl: string) {
         try {
             this.isClosedRequestRecieved = false;
@@ -67,8 +74,6 @@ export class Meeting {
     }
     private async ConnectNewConnectionAndDeleteConenction() {
         try {
-            console.log(this.userList);
-            console.log(this.connections);
             for (var i = 0; i < this.userList.length; i++) {
                 if (this.connections.find(us => us.user.Id == this.userList[i].Id) == null) {
                     var connectionConsumer = await this.createConsumerConnection(this.userList[i]);
@@ -91,7 +96,13 @@ export class Meeting {
             for (var u = 0; u < this.connections.length; u++) {
                 var user = this.userList.find(us => us.Id == this.connections[u].user.Id);
                 if (user != null) {
-                    console.log("update user");
+                    if ((user.Camera && !this.connections[u].user.Camera) || (user.Mic && !this.connections[u].user.Mic)) {
+                       if(!this.connections[u].isProducer)
+                       {
+                        this.connections[u].user = user;
+                        await this.consume(this.connections[u]);
+                       }
+                    }
                     this.connections[u].user = user;
                 }
             }
@@ -172,7 +183,6 @@ export class Meeting {
     }
     private async getNewChatMessage() {
         var messages = <ChatModel[]>await this.appService.GetChatMessages({ 'MeetingUserId': this.activeUser.Id });
-        console.log(messages);
         messages.forEach(message => {
             if (message.GroupMessage) {
                 this.activeConnection.chatMessages.push(message);
@@ -273,45 +283,42 @@ export class Meeting {
     public async switchCamera(camera: MediaDeviceInfo) {
         await this.enableVideo(camera);
     }
-    public async switchCameraMobile()
-    {
+    public async switchCameraMobile() {
         try {
             var faceMode = "user";
-         if(this.localStream != null && this.localStream.getVideoTracks().length > 0)
-         {
-             var activeFaceMode = this.localStream.getVideoTracks()[0].getSettings().facingMode;
-             if(activeFaceMode == "user")
-             {
-                faceMode = "environment";
-             }
-             this.localStream.getVideoTracks()[0].stop();
-         }
-        const newStream: MediaStream = await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:faceMode}});
-        if (newStream == null || newStream.getVideoTracks().length < 1) {
-            throw new Error("video stream is null");
-        }
-        this.activeUser.Camera = true;
-        this.activeUser.ShareScreen = false;
-        this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
-        if (this.localStream != null) {
-            if (this.localStream.getVideoTracks().length > 0) {
-                this.localStream.removeTrack(this.localStream.getVideoTracks()[0]);
-                this.localStream.addTrack(newStream.getVideoTracks()[0]);
+            if (this.localStream != null && this.localStream.getVideoTracks().length > 0) {
+                var activeFaceMode = this.localStream.getVideoTracks()[0].getSettings().facingMode;
+                if (activeFaceMode == "user") {
+                    faceMode = "environment";
+                }
+                this.localStream.getVideoTracks()[0].stop();
+            }
+            const newStream: MediaStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: faceMode } });
+            if (newStream == null || newStream.getVideoTracks().length < 1) {
+                throw new Error("video stream is null");
+            }
+            this.activeUser.Camera = true;
+            this.activeUser.ShareScreen = false;
+            this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
+            if (this.localStream != null) {
+                if (this.localStream.getVideoTracks().length > 0) {
+                    this.localStream.removeTrack(this.localStream.getVideoTracks()[0]);
+                    this.localStream.addTrack(newStream.getVideoTracks()[0]);
+                }
+                else {
+                    this.localStream.addTrack(newStream.getVideoTracks()[0]);
+                }
             }
             else {
-                this.localStream.addTrack(newStream.getVideoTracks()[0]);
+                this.localStream = newStream;
             }
-        }
-        else {
-            this.localStream = newStream;
-        }
-        await this.updateStreamProducerTrack(true, false, this.localStream);
-            
-        } catch (error:any) {
+            await this.updateStreamProducerTrack(true, false, this.localStream);
+
+        } catch (error: any) {
             throw new ConusmaException("switchCameraMobile", "Cannot switch camera", error);
 
         }
-       
+
     }
     public async switchMicrophone(microphone: MediaDeviceInfo) {
         await this.enableAudio(microphone);
@@ -438,12 +445,12 @@ export class Meeting {
             this.activeUser.ActiveCamera = newStream.getVideoTracks()[0].enabled;
             if (this.localStream != null) {
                 if (this.localStream.getVideoTracks().length > 0) {
+                    this.localStream.getVideoTracks()[0].stop();
                     this.localStream.removeTrack(this.localStream.getVideoTracks()[0]);
                     this.localStream.addTrack(newStream.getVideoTracks()[0]);
                 }
                 else {
                     this.localStream.addTrack(newStream.getVideoTracks()[0]);
-
                 }
             }
             else {
@@ -648,6 +655,12 @@ export class Meeting {
         connection = await this.createConnectionForConsumer(connection);
         try {
             connection.transport = await connection.mediaServer.consume(connection.user);
+            if (connection.user.Camera || connection.user.ShareScreen) {
+                await connection.mediaServer.addConsumer(connection.transport, "video");
+            }
+            if (connection.user.Mic) {
+                await connection.mediaServer.addConsumer(connection.transport, "audio");
+            }
             connection.stream = connection.transport.RemoteStream;
             connection.changeStreamStateEventEmit(true);
         } catch (e) {
@@ -667,16 +680,20 @@ export class Meeting {
     }
 
     private async createConnectionForProducer() {
-        const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.GetMediaServer(this.activeUser.Id);
-        var mediaServer = await this.createMediaServer(mediaServerModel);
-        this.activeConnection.setMediaServer(mediaServer);
-        this.activeConnection.isProducer = true;
+        if (this.activeConnection.mediaServer == null) {
+            const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.GetMediaServer(this.activeUser.Id);
+            var mediaServer = await this.createMediaServer(mediaServerModel);
+            this.activeConnection.setMediaServer(mediaServer);
+            this.activeConnection.isProducer = true;
+        }
     }
 
     private async createConnectionForConsumer(connection: Connection) {
-        const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.getMediaServerById(this.activeUser.Id, connection.user.MediaServerId);
-        var mediaServer = await this.createMediaServer(mediaServerModel);
-        connection.setMediaServer(mediaServer);
+        if (connection.mediaServer == null) {
+            const mediaServerModel: MediaServerModel = <MediaServerModel>await this.appService.getMediaServerById(this.activeUser.Id, connection.user.MediaServerId);
+            var mediaServer = await this.createMediaServer(mediaServerModel);
+            connection.setMediaServer(mediaServer);
+        }
         return connection;
     }
     public async changeMicrophoneState(state: boolean) {

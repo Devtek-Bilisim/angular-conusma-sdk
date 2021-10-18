@@ -6,7 +6,7 @@ import { SuccessApiMesage } from "./Models/success-api-message";
 
 export class AppService {
   private appId: string = "";
-  private apiUrl: string = "";
+  public apiUrl: string = "";
   private deviceId: string = "";
   private version: string = "1.0.0";
   constructor( private http: HttpClient,parameters: { apiUrl: string, deviceId: string, version: string }) {

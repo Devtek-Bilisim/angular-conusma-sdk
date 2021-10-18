@@ -5,7 +5,7 @@ import { EventEmitter } from "@angular/core";
 import { ChatModel } from "./Models/chat-model";
 export class Connection {
     user:MeetingUserModel;
-    mediaServer:MediaServer;
+    mediaServer:MediaServer = null;
     transport:any;
     
     stream:MediaStream = null;

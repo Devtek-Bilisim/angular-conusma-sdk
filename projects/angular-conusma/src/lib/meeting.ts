@@ -48,8 +48,7 @@ export class Meeting {
         this.activeUser.ActiveMic = false;
         this.meeting = _meeting;
     }
-    public sendBeacon()
-    {
+    public sendBeacon() {
         let url = this.appService.apiUrl + "/Live/CloseBeacon";
         let data = { 'MeetingUserId': this.activeUser.Id, 'Token': this.appService.getJwtToken() }
         if (navigator.sendBeacon(url, JSON.stringify(data))) {
@@ -97,18 +96,31 @@ export class Meeting {
                 var user = this.userList.find(us => us.Id == this.connections[u].user.Id);
                 if (user != null) {
                     if ((user.Camera && !this.connections[u].user.Camera) || (user.Mic && !this.connections[u].user.Mic)) {
-                       if(!this.connections[u].isProducer)
-                       {
-                        this.connections[u].user = user;
-                        await this.consume(this.connections[u]);
-                       }
+                        if (!this.connections[u].isProducer) {
+                            this.connections[u].user = user;
+                            await this.consume(this.connections[u]);
+                        }
                     }
                     this.connections[u].user = user;
                 }
             }
+            var dataMeetingUser = {
+                MeetingUserId: this.activeUser.Id
+            };
+            this.activeConnection.user = <MeetingUserModel>await this.appService.GetMyMeetingUser(dataMeetingUser);
 
         } catch (error) {
             console.log("error " + error);
+        }
+    }
+    private async meetingEventControl() {
+        if (this.activeConnection.user.Status == 5) {
+            this.meetingEvents.emit("kick");
+            await this.close(true);
+        }
+        if (this.meeting.MeetingStatus == MeetingStatusEnum.end) {
+            this.meetingEvents.emit("meetingend");
+            await this.close(true);
         }
     }
     private startMeetingWorker(apiUrl: string) {
@@ -136,6 +148,7 @@ export class Meeting {
                 this.workerModel.MeetingUpdate = eventChange.MeetingUpdate;
                 await this.getMeetingInfo();
             }
+            await this.meetingEventControl();
         };
     }
 
@@ -588,7 +601,7 @@ export class Meeting {
             throw new ConusmaException("createConnection", "active connection is not null");
         }
 
-        this.activeConnection = new Connection(this.activeUser, this.activeSpeaker);
+        this.activeConnection = new Connection(this.activeUser, this.appService, this.activeSpeaker);
         this.activeConnection.isProducer = false;
         if (this.activeUser.UserType == 2) {
             if (this.activeUser.UserId == this.meeting.OwnerId) {
@@ -644,7 +657,7 @@ export class Meeting {
     }
     public async createConsumerConnection(user: MeetingUserModel) {
         if (this.connections.find(us => us.user.Id == user.Id) == null) {
-            var connection: Connection = new Connection(user, this.activeSpeaker);
+            var connection: Connection = new Connection(user, this.appService, this.activeSpeaker);
             connection.isProducer = false;
             this.connections.push(connection);
             return connection;

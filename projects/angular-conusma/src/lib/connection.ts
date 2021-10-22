@@ -22,12 +22,12 @@ export class Connection {
     public isAudioActive = true;
     public isVideoActive = true;
     public lastReactionsTime = "";
-    public activeSpekar: string = "";
+    public activeSpeakar: string = "";
     public chatMessages: ChatModel[] = [];
     private appService: AppService;
     constructor(user: MeetingUserModel, _appService: AppService, _activeSpeaker: string = "Default") {
         this.user = user;
-        this.activeSpekar = _activeSpeaker;
+        this.activeSpeakar = _activeSpeaker;
         this.appService = _appService
     }
     public mute() {
@@ -95,7 +95,7 @@ export class Connection {
         this.mediaServer = mediaServer;
     }
     public changeSpeakerEventEmit(deviceId: string) {
-        this.activeSpekar = deviceId;
+        this.activeSpeakar = deviceId;
         this.changeSpeaker.emit(deviceId);
     }
     public changeStreamStateEventEmit(state: boolean) {

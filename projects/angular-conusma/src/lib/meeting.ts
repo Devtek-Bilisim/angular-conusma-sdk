@@ -71,7 +71,26 @@ export class Meeting {
             connection.reactionsChangeControl();
         });
     }
-    private async ConnectNewConnectionAndDeleteConenction() {
+    private async DeleteConsumer() {
+        try {
+            var deleteUserList: Connection[] = [];
+            for (var l = 0; l < this.connections.length; l++) {
+                if (this.userList.find(us => us.Id == this.connections[l].user.Id) == null) {
+                    deleteUserList.push(this.connections[l]);
+                }
+            }
+            for (var d = 0; d < deleteUserList.length; d++) {
+                try {
+                    await this.closeConsumer(deleteUserList[d]);
+                } catch (error: any) {
+                    console.error("DeleteConsumer in closeConsumer error", error);
+                }
+            }
+        } catch (error: any) {
+            console.error("DeleteConsumer error");
+        }
+    }
+    private async consumeConsumer() {
         try {
             for (var i = 0; i < this.userList.length; i++) {
                 if (this.connections.find(us => us.user.Id == this.userList[i].Id) == null) {
@@ -83,15 +102,12 @@ export class Meeting {
                     }
                 }
             }
-            var deleteUserList: Connection[] = [];
-            for (var l = 0; l < this.connections.length; l++) {
-                if (this.userList.find(us => us.Id == this.connections[l].user.Id) == null) {
-                    deleteUserList.push(this.connections[l]);
-                }
-            }
-            for (var d = 0; d < deleteUserList.length; d++) {
-                await this.closeConsumer(deleteUserList[d]);
-            }
+        } catch (error) {
+
+        }
+    }
+    private async updateAndConsumeConsumer() {
+        try {
             for (var u = 0; u < this.connections.length; u++) {
                 var user = this.userList.find(us => us.Id == this.connections[u].user.Id);
                 if (user != null) {
@@ -104,10 +120,20 @@ export class Meeting {
                     this.connections[u].user = user;
                 }
             }
+        } catch (error: any) {
+            console.error("updateAndConsumeConsumer" + error);
+        }
+    }
+    private async ConnectNewConnectionAndDeleteConenction() {
+        try {
+            await this.DeleteConsumer();
+            await this.consumeConsumer();
+            await this.updateAndConsumeConsumer();
             var dataMeetingUser = {
                 MeetingUserId: this.activeUser.Id
             };
             this.activeConnection.user = <MeetingUserModel>await this.appService.GetMyMeetingUser(dataMeetingUser);
+            this.activeUser = this.activeConnection.user;
 
         } catch (error) {
             console.log("error " + error);
@@ -684,7 +710,11 @@ export class Meeting {
         return connection;
     }
     public async closeConsumer(connection: Connection) {
-        await connection.mediaServer.closeConsumer(connection.user);
+        try {
+            await connection.mediaServer.closeConsumer(connection.user);
+        } catch (error) {
+            console.error("closeConsumer "+error);
+        }
         for (var i = 0; i < this.connections.length; i++) {
             if (this.connections[i].user.Id == connection.user.Id && this.connections[i].mediaServer.id == connection.mediaServer.id) {
                 this.removeItemOnce(this.connections, i);

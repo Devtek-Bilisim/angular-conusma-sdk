@@ -66,8 +66,9 @@ export class Connection {
         await this.appService.RemoveUser(data);
     }
     public async renameUser(name: string) {
-        this.user.MeetingFullName = name;
-        await this.appService.UpdateMeetingUser(this.user);
+        var muser:MeetingUserModel = JSON.parse(JSON.stringify(this.user));
+        muser.MeetingFullName = name;
+        await this.appService.UpdateMeetingUser(muser);
     }
     public async raiseHand() {
        var data =  {

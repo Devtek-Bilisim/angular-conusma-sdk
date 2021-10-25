@@ -278,6 +278,7 @@ export class MediaServer {
                     if (item.transport) {
                         item.transport.close();
                     }
+                    await this.signal('removeConsumerTransport', {'consumerTransportId':item.transportId},this.socket);
                     break;
                 }
                 index++;

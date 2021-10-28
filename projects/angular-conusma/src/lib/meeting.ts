@@ -78,6 +78,10 @@ export class Meeting {
                 if (this.userList.find(us => us.Id == this.connections[l].user.Id) == null) {
                     deleteUserList.push(this.connections[l]);
                 }
+                else if (this.userList.find(us => us.Id == this.connections[l].user.Id && us.ConnectionId == this.connections[l].user.ConnectionId) == null) {
+                    console.log("kullanıcnın connect id si değiştiği için siliniyor");
+                    deleteUserList.push(this.connections[l]);
+                }
             }
             for (var d = 0; d < deleteUserList.length; d++) {
                 try {
@@ -124,19 +128,27 @@ export class Meeting {
             console.error("updateAndConsumeConsumer" + error);
         }
     }
-    private async ConnectNewConnectionAndDeleteConenction() {
+    private async updateMyMeetingUser() {
         try {
-            await this.DeleteConsumer();
-            await this.consumeConsumer();
-            await this.updateAndConsumeConsumer();
             var dataMeetingUser = {
                 MeetingUserId: this.activeUser.Id
             };
             this.activeConnection.user = <MeetingUserModel>await this.appService.GetMyMeetingUser(dataMeetingUser);
             this.activeUser = this.activeConnection.user;
+        } catch (error) {
+            console.error("updateMyMeetingUser " + error);
+
+        }
+    }
+    private async ConnectNewConnectionAndDeleteConenction() {
+        try {
+            await this.updateMyMeetingUser();
+            await this.DeleteConsumer();
+            await this.consumeConsumer();
+            await this.updateAndConsumeConsumer();
 
         } catch (error) {
-            console.log("error " + error);
+            console.error("ConnectNewConnectionAndDeleteConenction " + error);
         }
     }
     private async meetingEventControl() {
@@ -713,7 +725,7 @@ export class Meeting {
         try {
             await connection.mediaServer.closeConsumer(connection.user);
         } catch (error) {
-            console.error("closeConsumer "+error);
+            console.error("closeConsumer " + error);
         }
         for (var i = 0; i < this.connections.length; i++) {
             if (this.connections[i].user.Id == connection.user.Id && this.connections[i].mediaServer.id == connection.mediaServer.id) {

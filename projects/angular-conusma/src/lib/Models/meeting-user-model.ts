@@ -23,4 +23,5 @@ export class MeetingUserModel {
     public Id:string = "";
     public AddedDate:string = "";
     public ModifiedDate:string = "";
+    public ConnectionId:string="";
 }

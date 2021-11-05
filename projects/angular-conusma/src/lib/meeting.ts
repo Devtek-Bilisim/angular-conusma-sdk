@@ -379,26 +379,37 @@ export class Meeting {
     }
     public async enableAudioVideo(camera: MediaDeviceInfo = null, microphone: MediaDeviceInfo = null) {
         try {
+            var mobil = false;
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                // true for mobile device
+                mobil = true;
+                console.log("device is mobile");
+            } else {
+                // false for not mobile device
+                console.log("device is not mobile");
+            }
             var activeResolution: CameraResolution = null;
-            for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
-                var resolution = this.camereResolutionList.quickScan[i];
-                try {
-                    var temp_videoConstraints: any = {
-                        width: { ideal: resolution.width },
-                        height: { ideal: resolution.height },
-                    };
-                    var tmp_constraints: any = {
-                        audio: false,
-                        video: temp_videoConstraints
-                    };
-                    var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
-                    if (testStream != null) {
-                        activeResolution = resolution;
-                        console.log("tespit edilen en yüksek çözünürlük : "+activeResolution.label);
-                        break;
-                    }
-                } catch (error) {
+            if (!mobil) {
+                for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
+                    var resolution = this.camereResolutionList.quickScan[i];
+                    try {
+                        var temp_videoConstraints: any = {
+                            width: { ideal: resolution.width },
+                            height: { ideal: resolution.height },
+                        };
+                        var tmp_constraints: any = {
+                            audio: false,
+                            video: temp_videoConstraints
+                        };
+                        var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
+                        if (testStream != null) {
+                            activeResolution = resolution;
+                            console.log("tespit edilen en yüksek çözünürlük : " + activeResolution.label);
+                            break;
+                        }
+                    } catch (error) {
 
+                    }
                 }
             }
             var videoConstraints: any = {
@@ -484,28 +495,38 @@ export class Meeting {
 
     public async enableVideo(camera: MediaDeviceInfo = null) {
         try {
+            var mobil = false;
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                mobil = true;
+                console.log("device is mobile");
+            } else {
+                console.log("device is not mobile");
+            }
             var activeResolution: CameraResolution = null;
-            for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
-                var resolution = this.camereResolutionList.quickScan[i];
-                try {
-                    var temp_videoConstraints: any = {
-                        width: { ideal: resolution.width },
-                        height: { ideal: resolution.height },
-                    };
-                    var tmp_constraints: any = {
-                        audio: false,
-                        video: temp_videoConstraints
-                    };
-                    var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
-                    if (testStream != null) {
-                        activeResolution = resolution;
-                        console.log("tespit edilen en yüksek çözünürlük : "+activeResolution.label);
-                        break;
-                    }
-                } catch (error) {
+            if (!mobil) {
+                for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
+                    var resolution = this.camereResolutionList.quickScan[i];
+                    try {
+                        var temp_videoConstraints: any = {
+                            width: { ideal: resolution.width },
+                            height: { ideal: resolution.height },
+                        };
+                        var tmp_constraints: any = {
+                            audio: false,
+                            video: temp_videoConstraints
+                        };
+                        var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
+                        if (testStream != null) {
+                            activeResolution = resolution;
+                            console.log("tespit edilen en yüksek çözünürlük : " + activeResolution.label);
+                            break;
+                        }
+                    } catch (error) {
 
+                    }
                 }
             }
+
             var videoConstraints: any = {
             };
             if (activeResolution != null) {

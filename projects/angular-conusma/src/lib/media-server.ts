@@ -104,9 +104,7 @@ export class MediaServer {
                 this.videoProducer = await this.producerTransport.produce({
                     track: videoTrack,
                     encodings: [
-                        { maxBitrate: 500000 },
-                        { maxBitrate: 1000000 },
-                        { maxBitrate: 2000000 }
+                        
                     ],
                     codecOptions:
                     {

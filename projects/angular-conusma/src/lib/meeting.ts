@@ -11,8 +11,11 @@ import * as EventEmitter from "events";
 import { MeetingStatusEnum } from "./Enums/meeting-status";
 import { ChatModel } from "./Models/chat-model";
 import { MeetingModel } from "./Models/meeting-model";
+import { CameraResolutionList } from "./Component/camera-resolution-list";
+import { CameraResolution } from "./Component/camera-resolution";
 
 export class Meeting {
+    private camereResolutionList: CameraResolutionList = new CameraResolutionList();
     public activeUser: MeetingUserModel;
     public meetingWorker: Worker = null;
     public mediaServers: MediaServer[] = new Array();
@@ -376,19 +379,36 @@ export class Meeting {
     }
     public async enableAudioVideo(camera: MediaDeviceInfo = null, microphone: MediaDeviceInfo = null) {
         try {
+            var activeResolution: CameraResolution = null;
+            for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
+                var resolution = this.camereResolutionList.quickScan[i];
+                try {
+                    var temp_videoConstraints: any = {
+                        width: { ideal: resolution.width },
+                        height: { ideal: resolution.height },
+                    };
+                    var tmp_constraints: any = {
+                        audio: false,
+                        video: temp_videoConstraints
+                    };
+                    var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
+                    if (testStream != null) {
+                        activeResolution = resolution;
+                        console.log("tespit edilen en yüksek çözünürlük : "+activeResolution.label);
+                        break;
+                    }
+                } catch (error) {
+
+                }
+            }
             var videoConstraints: any = {
-                "width": {
-                    "min": "320",
-                    "ideal": "480",
-                    "max": "640"
-                },
-                "height": {
-                    "min": "240",
-                    "ideal": "360",
-                    "max": "480"
-                },
-                "frameRate": "10"
             };
+            if (activeResolution != null) {
+                videoConstraints = {
+                    width: { ideal: activeResolution.width },
+                    height: { ideal: activeResolution.height },
+                }
+            }
             var audioConstraints: any = { 'echoCancellation': true };
 
             if (camera != null) {
@@ -464,24 +484,39 @@ export class Meeting {
 
     public async enableVideo(camera: MediaDeviceInfo = null) {
         try {
-            var videoConstraints: any = {
-                "width": {
-                    "min": "320",
-                    "ideal": "480",
-                    "max": "640"
-                },
-                "height": {
-                    "min": "240",
-                    "ideal": "360",
-                    "max": "480"
-                },
-                "frameRate": "10"
-            };
+            var activeResolution: CameraResolution = null;
+            for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
+                var resolution = this.camereResolutionList.quickScan[i];
+                try {
+                    var temp_videoConstraints: any = {
+                        width: { ideal: resolution.width },
+                        height: { ideal: resolution.height },
+                    };
+                    var tmp_constraints: any = {
+                        audio: false,
+                        video: temp_videoConstraints
+                    };
+                    var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
+                    if (testStream != null) {
+                        activeResolution = resolution;
+                        console.log("tespit edilen en yüksek çözünürlük : "+activeResolution.label);
+                        break;
+                    }
+                } catch (error) {
 
+                }
+            }
+            var videoConstraints: any = {
+            };
+            if (activeResolution != null) {
+                videoConstraints = {
+                    width: { ideal: activeResolution.width },
+                    height: { ideal: activeResolution.height },
+                }
+            }
             if (camera != null) {
                 videoConstraints.deviceId = { exact: camera.deviceId };
             }
-
             const constraints: any = {
                 audio: false,
                 video: videoConstraints
@@ -723,15 +758,20 @@ export class Meeting {
     }
     public async closeConsumer(connection: Connection) {
         try {
-            await connection.mediaServer.closeConsumer(connection.user);
+            if (connection.mediaServer != null) {
+                await connection.mediaServer.closeConsumer(connection.user);
+            }
         } catch (error) {
             console.error("closeConsumer " + error);
         }
-        for (var i = 0; i < this.connections.length; i++) {
-            if (this.connections[i].user.Id == connection.user.Id && this.connections[i].mediaServer.id == connection.mediaServer.id) {
-                this.removeItemOnce(this.connections, i);
+        if (connection != null) {
+            for (var i = 0; i < this.connections.length; i++) {
+                if (this.connections[i].user.Id == connection.user.Id) {
+                    this.connections = this.removeItemOnce(this.connections, i);
+                }
             }
         }
+
     }
 
     private async createConnectionForProducer() {

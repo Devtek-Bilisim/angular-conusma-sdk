@@ -15,7 +15,7 @@ export class AppService {
     this.version = parameters.version;
   }
   public getJwtToken() {
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme = <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
       return localStorage.getItem("JWT_TOKEN");
     } else {
@@ -25,9 +25,9 @@ export class AppService {
   public saveUserData(userData:any,ispublic =false) {
     if(ispublic)
     {
-      localStorage.setItem("rememberme","true");
+      localStorage.setItem("rememberme","false");
     }
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme = <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
        localStorage.setItem("JWT_TOKEN",userData.Token);
        localStorage.setItem("UserData",JSON.stringify(userData));

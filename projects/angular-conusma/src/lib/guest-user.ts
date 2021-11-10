@@ -15,35 +15,32 @@ export class GuestUser {
   }
   public userInfo: GuestUserModel = new GuestUserModel();
   public async create() {
-    var token = localStorage.getItem('JWT_TOKEN');
+    var token = this.appService.getJwtToken();
     if (token != undefined && token != null) {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
-      localStorage.setItem('UserData', JSON.stringify(this.userInfo));
+      this.appService.saveUserData(this.userInfo,true);
     }
     else {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
-      localStorage.setItem('UserData', JSON.stringify(this.userInfo));
+      this.appService.saveUserData(this.userInfo,true);
 
     }
 
   }
   public async load() {
-    var token = localStorage.getItem('JWT_TOKEN');
+    var token = this.appService.getJwtToken();
     if (token != undefined && token != null) {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
-      localStorage.setItem('UserData', JSON.stringify(this.userInfo));
+      this.appService.saveUserData(this.userInfo,true);
     }
     else {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
-      localStorage.setItem('UserData', JSON.stringify(this.userInfo));
+      this.appService.saveUserData(this.userInfo,true);
+
     }
 
   }

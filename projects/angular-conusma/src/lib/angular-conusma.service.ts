@@ -83,27 +83,11 @@ export class AngularConusmaService {
     }
   }
 
-  public storeTokens(jwtToken: string, username: string, isloggedin: string, rememberme: string) {
-    localStorage.setItem("rememberme", rememberme);
-    if (rememberme) {
-      localStorage.setItem("JWT_TOKEN", jwtToken);
-      localStorage.setItem('isLoggedin', isloggedin);
-      localStorage.setItem('username', username);
-      localStorage.removeItem("PublicToken");
-      localStorage.removeItem("PublicUserData");
-    } else {
-      sessionStorage.setItem("JWT_TOKEN", jwtToken);
-      sessionStorage.setItem('isLoggedin', isloggedin);
-      sessionStorage.setItem('username', username);
-      localStorage.removeItem('rememberme');
-      localStorage.removeItem("PublicToken");
-      localStorage.removeItem("PublicUserData");
-    }
-  }
+
 
 
   public IsUser() {
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme =  <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
       let userData = localStorage.getItem("UserData");
       if (userData != null) {
@@ -147,7 +131,7 @@ export class AngularConusmaService {
     return await this.appService.controlForgotPasswordCode(code,password);
   } 
   public getUserName() {
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme = <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
       return localStorage.getItem("username");
     } else {
@@ -156,7 +140,7 @@ export class AngularConusmaService {
   }
 
   public getIsLoggedIn() {
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme = <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
       return localStorage.getItem("isLoggedin");
     } else {
@@ -170,6 +154,7 @@ export class AngularConusmaService {
     localStorage.removeItem('rememberme');
     sessionStorage.removeItem("JWT_TOKEN");
     sessionStorage.removeItem('isLoggedin');
+    sessionStorage.removeItem('UserData');
     localStorage.removeItem("UserData");
     this.user = null;
     this.publicUser = null;
@@ -218,20 +203,7 @@ export class AngularConusmaService {
 
     await alert.present();
   }
-  private stroageSaveUserData(userData:any)
-  {
-    let rememberme = localStorage.getItem("rememberme");
-    if(rememberme)
-    {
-      localStorage.setItem("UserData", JSON.stringify(userData));
-      localStorage.setItem('JWT_TOKEN', userData.Token);
-    }
-    else
-    {
-      sessionStorage.setItem("UserData", JSON.stringify(userData));
-      sessionStorage.setItem('JWT_TOKEN', userData.Token);
-    }
-  }
+
   public async isUserLoggedIn() {
     try {
       var token = this.appService.getJwtToken();
@@ -239,7 +211,7 @@ export class AngularConusmaService {
         var user_data = await this.appService.isTokenValid();
         if(user_data.User_Type == 1)
         {
-          this.stroageSaveUserData(user_data);
+          this.appService.saveUserData(user_data);
           this.user = new User(this.appService);
           this.user.userInfo = user_data;
           return true;
@@ -264,7 +236,7 @@ export class AngularConusmaService {
 
   public async login(data: { userkey: string, password: string, deviceId: string }) {
     var user_data = await this.appService.login(data);
-    this.stroageSaveUserData(user_data);
+    this.appService.saveUserData(user_data);
     this.user = new User(this.appService);
     this.user.userInfo = user_data;
     this.appService.saveUserData(this.user.userInfo);
@@ -272,7 +244,7 @@ export class AngularConusmaService {
   }
   public async Googlelogin(data: { GoogleToken: string, deviceId: string }) {
     var user_data = await this.appService.Googlelogin(data);
-    this.stroageSaveUserData(user_data);
+    this.appService.saveUserData(user_data);
     this.user = new User(this.appService);
     this.user.userInfo = user_data;
     this.appService.saveUserData(this.user.userInfo);

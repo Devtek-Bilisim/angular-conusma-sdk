@@ -366,7 +366,7 @@ export class Meeting {
             else {
                 this.localStream = newStream;
             }
-            await this.updateStreamProducerTrack(true, false, this.localStream);
+            await this.updateStreamProducerTrack(true, false);
 
         } catch (error: any) {
             throw new ConusmaException("switchCameraMobile", "Cannot switch camera", error);
@@ -447,7 +447,7 @@ export class Meeting {
             this.activeUser.Mic = true;
             this.activeUser.ActiveMic = newStream.getAudioTracks()[0].enabled;
             this.localStream = newStream;
-            await this.updateStreamProducerTrack(true, true, this.localStream);
+            await this.updateStreamProducerTrack(true, true);
         } catch (error: any) {
             this.activeUser.Camera = false;
             this.activeUser.ActiveCamera = false;
@@ -487,7 +487,7 @@ export class Meeting {
             else {
                 this.localStream = newStream;
             }
-            await this.updateStreamProducerTrack(false, true, this.localStream);
+            await this.updateStreamProducerTrack(false, true);
         } catch (error: any) {
             throw new ConusmaException("enableAudio", "can not read microphone, please check exception.", error);
         }
@@ -563,7 +563,7 @@ export class Meeting {
             else {
                 this.localStream = newStream;
             }
-            await this.updateStreamProducerTrack(true, false, this.localStream);
+            await this.updateStreamProducerTrack(true, false);
         } catch (error: any) {
             throw new ConusmaException("enableVideo", "can not read camera, please check exception.", error);
         }
@@ -599,7 +599,7 @@ export class Meeting {
             else {
                 this.localStream = newStream;
             }
-            await this.updateStreamProducerTrack(true, false, this.localStream);
+            await this.updateStreamProducerTrack(true, false);
             this.activeUser.ShareScreen = true;
             this.appService.UpdateMeetingUser(this.activeUser);
         } catch (error: any) {
@@ -617,7 +617,7 @@ export class Meeting {
             throw new ConusmaException("disableScreenShare ", "can not read screen, please check exception.", error);
         }
     }
-    private async updateStreamProducerTrack(video: boolean = false, audio: boolean = false, stream: MediaStream) {
+    public async updateStreamProducerTrack(video: boolean = false, audio: boolean = false) {
         if (video && audio) {
             if (this.activeConnection != null && this.activeConnection.mediaServer != null && this.activeConnection.mediaServer.videoProducer != null) {
                 await this.activeConnection.mediaServer.replaceTrack("video", this.localStream);

@@ -7,6 +7,7 @@ export class MediaServer {
     id: number = 0;
     socket: any = null;
     device: any = null;
+    broadcastTransport:any = null;
     producerTransport:any = null;
     videoProducer:any = null;
     audioProducer:any;
@@ -65,6 +66,37 @@ export class MediaServer {
         }
     }
 
+    private async createBroadcastTransport() {
+        try {
+            console.log("createBroadcastTransport started.");
+            var transportOptions: any = await this.signal('createBroadcastTransport', {}, this.socket);
+    
+            this.broadcastTransport = await this.device.createSendTransport(transportOptions);
+            this.broadcastTransport.on('connect', async ({ dtlsParameters }: any, callback: any, errback: any) => {
+                let error = await this.signal('connectBroadcastTransport', {
+                    transportId: transportOptions.id,
+                    dtlsParameters
+                }, this.socket);
+                callback();
+            });
+            
+            this.producerTransport.on('broadcast', async ({ kind, rtpParameters, appData }: any,
+                callback: any, errback: any) => {
+                let paused = false;
+                paused = false;
+                let id = await this.signal('broadcast', {
+                    transportId: transportOptions.id,
+                    kind,
+                    rtpParameters,
+                    paused,
+                    appData
+                }, this.socket);
+                callback(id)
+            });
+        } catch (error:any) {
+            throw new ConusmaException("createBroadcastTransport", "createBroadcastTransport error", error);
+        }
+    }
     private async createProducerTransport() {
         try {
                 console.log("createProducerTransport started.");

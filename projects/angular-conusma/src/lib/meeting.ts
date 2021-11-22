@@ -42,6 +42,7 @@ export class Meeting {
     public meetingEvents: EventEmitter = new EventEmitter();
     public meeting: MeetingModel = null;
     public activeSpeaker: string = "default";
+    public totalChatMessageCount:number = 0;
     constructor(activeUser: MeetingUserModel, _meeting: MeetingModel, appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
@@ -237,6 +238,7 @@ export class Meeting {
     }
     private async getNewChatMessage() {
         var messages = <ChatModel[]>await this.appService.GetChatMessages({ 'MeetingUserId': this.activeUser.Id });
+        this.totalChatMessageCount+= messages.length;
         messages.forEach(message => {
             if (message.GroupMessage) {
                 this.activeConnection.chatMessages.push(message);

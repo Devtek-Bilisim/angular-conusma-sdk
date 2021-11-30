@@ -21,6 +21,7 @@ export class Meeting {
     public mediaServers: MediaServer[] = new Array();
     public connections: Connection[] = new Array();
     public userList: MeetingUserModel[] = new Array();
+    public approvalUserList: MeetingUserModel[] = new Array();
     private appService: AppService;
 
     public isClosedRequestRecieved: boolean = false;
@@ -165,6 +166,31 @@ export class Meeting {
             await this.close(true);
         }
     }
+    private async updateApprovedUserList()
+    {
+        try {
+            var userList = <MeetingUserModel[]> await this.appService.GetApprovedUserList({'meetingUserId':this.activeUser.Id});
+            if(userList.length > 0)
+            {
+                if(this.approvalUserList.length < userList.length)
+                {
+                    this.meetingEvents.emit("aprrovalpendinguser");
+
+                }
+                else 
+                {
+                  var diff =  userList.find(us => (this.approvalUserList.find(s=> s.Id == us.Id) == null) );
+                  if(diff != null )
+                  {
+                    this.meetingEvents.emit("aprrovalpendinguser");
+                  }
+                }
+            }
+            this.approvalUserList = userList;
+        } catch (error:any) {
+            console.log("updateApprovedUserList"+error);
+        }
+    }
     private startMeetingWorker(apiUrl: string) {
         if (this.meetingWorker != null) {
             this.meetingWorker.terminate();
@@ -179,6 +205,11 @@ export class Meeting {
                 this.userList = await this.getAllUsers();
                 await this.ConnectNewConnectionAndDeleteConenction();
                 await this.ReactionsControl();
+                if(this.activeConnection?.isRoomOwner)
+                {
+                    await this.updateApprovedUserList();
+                }
+             
             }
             if (this.workerModel.ChatUpdates != eventChange.ChatUpdates) {
                 this.meetingEvents.emit("chat");

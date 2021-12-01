@@ -681,6 +681,13 @@ export class Meeting {
         }
 
     }
+    public async isItApprovedRetryControl() {
+        try {
+            return await this.appService.IsItApprovedRetryControl(this.activeUser.Id);
+        } catch (error: any) {
+            throw new ConusmaException("isItApprovedRetryControl", "user is not approved, please check exception ", error);
+        }
+    }
     public async isApproved() {
         try {
             return await this.appService.IsItApproved(this.activeUser.Id);

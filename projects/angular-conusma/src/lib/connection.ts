@@ -30,6 +30,13 @@ export class Connection {
         this.activeSpeakar = _activeSpeaker;
         this.appService = _appService
     }
+    public async approveUser(meetingUserId:string,approve:boolean)
+    {
+        if(this.isRoomOwner)
+        {
+            await this.appService.UserApproved({'meetingUserId':this.user.Id,'targetMeetingUserId':meetingUserId,'appro':approve});
+        }
+    }
     public mute() {
         this.stream.getAudioTracks()[0].enabled = false;
     }

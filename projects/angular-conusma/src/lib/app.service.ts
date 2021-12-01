@@ -88,6 +88,14 @@ export class AppService {
       throw new ConusmaException(err.error.type,err.err.value);
     });
   }
+  public async IsItApprovedRetryControl(MeetingUserId: string) {
+    return await this.httpPost("Live/IsItApprovedRetryControl/" + MeetingUserId, null).toPromise().then((res)=>{
+      console.log("Response"+res);
+      return res;
+    },err=>{
+      throw new ConusmaException(err.error.type,err.err.value);
+    });
+  }
   public async ConnectMeeting(data: any) {
     return this.httpPost("Live/Connect", data).toPromise().then((res)=>{
       return res;

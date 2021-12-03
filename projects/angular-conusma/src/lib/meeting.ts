@@ -43,7 +43,7 @@ export class Meeting {
     public meetingEvents: EventEmitter = new EventEmitter();
     public meeting: MeetingModel = null;
     public activeSpeaker: string = "default";
-    public totalChatMessageCount:number = 0;
+    public totalChatMessageCount: number = 0;
     constructor(activeUser: MeetingUserModel, _meeting: MeetingModel, appService: AppService) {
         this.appService = appService;
         this.activeUser = activeUser;
@@ -133,27 +133,23 @@ export class Meeting {
             console.error("updateAndConsumeConsumer" + error);
         }
     }
-    public async getMeetingUser(refresh:boolean)
-    {
+    public async getMeetingUser(refresh: boolean) {
         try {
             var dataMeetingUser = {
                 MeetingUserId: this.activeUser.Id
             };
-            var user  = this.activeUser;
-            if(refresh)
-            {
+            var user = this.activeUser;
+            if (refresh) {
                 user = <MeetingUserModel>await this.appService.GetMyMeetingUser(dataMeetingUser);
             }
-            if(this.activeConnection != null)
-            {
+            if (this.activeConnection != null) {
                 this.activeConnection.user = user;
             }
-            if(this.activeUser != null)
-            {
+            if (this.activeUser != null) {
                 this.activeUser = user;
             }
             return user;
-        } catch (error:any) {
+        } catch (error: any) {
             throw new ConusmaException("getMeetingUser", "cannot close, please check exception", error);
         }
     }
@@ -190,29 +186,24 @@ export class Meeting {
             await this.close(true);
         }
     }
-    private async updateApprovedUserList()
-    {
+    private async updateApprovedUserList() {
         try {
-            var userList = <MeetingUserModel[]> await this.appService.GetApprovedUserList({'meetingUserId':this.activeUser.Id});
-            if(userList.length > 0)
-            {
-                if(this.approvalUserList.length < userList.length)
-                {
+            var userList = <MeetingUserModel[]>await this.appService.GetApprovedUserList({ 'meetingUserId': this.activeUser.Id });
+            if (userList.length > 0) {
+                if (this.approvalUserList.length < userList.length) {
                     this.meetingEvents.emit("aprrovalpendinguser");
 
                 }
-                else 
-                {
-                  var diff =  userList.find(us => (this.approvalUserList.find(s=> s.Id == us.Id) == null) );
-                  if(diff != null )
-                  {
-                    this.meetingEvents.emit("aprrovalpendinguser");
-                  }
+                else {
+                    var diff = userList.find(us => (this.approvalUserList.find(s => s.Id == us.Id) == null));
+                    if (diff != null) {
+                        this.meetingEvents.emit("aprrovalpendinguser");
+                    }
                 }
             }
             this.approvalUserList = userList;
-        } catch (error:any) {
-            console.log("updateApprovedUserList"+error);
+        } catch (error: any) {
+            console.log("updateApprovedUserList" + error);
         }
     }
     private startMeetingWorker(apiUrl: string) {
@@ -229,11 +220,10 @@ export class Meeting {
                 this.userList = await this.getAllUsers();
                 await this.ConnectNewConnectionAndDeleteConenction();
                 await this.ReactionsControl();
-                if(this.activeConnection?.isRoomOwner)
-                {
+                if (this.activeConnection?.isRoomOwner) {
                     await this.updateApprovedUserList();
                 }
-             
+
             }
             if (this.workerModel.ChatUpdates != eventChange.ChatUpdates) {
                 this.meetingEvents.emit("chat");
@@ -293,7 +283,7 @@ export class Meeting {
     }
     private async getNewChatMessage() {
         var messages = <ChatModel[]>await this.appService.GetChatMessages({ 'MeetingUserId': this.activeUser.Id });
-        this.totalChatMessageCount+= messages.length;
+        this.totalChatMessageCount += messages.length;
         messages.forEach(message => {
             if (message.GroupMessage) {
                 this.activeConnection.chatMessages.push(message);
@@ -437,17 +427,17 @@ export class Meeting {
     public async enableAudioVideo(camera: MediaDeviceInfo = null, microphone: MediaDeviceInfo = null) {
         try {
             var mobil = false;
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                // true for mobile device
-                mobil = true;
-                console.log("device is mobile");
-            } else {
-                // false for not mobile device
-                console.log("device is not mobile");
-            }
+            /* if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                 // true for mobile device
+                 mobil = true;
+                 console.log("device is mobile");
+             } else {
+                 // false for not mobile device
+                 console.log("device is not mobile");
+             }*/
             var activeResolution: CameraResolution = null;
             if (!mobil) {
-                for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
+                for (var i = this.camereResolutionList.quickScan.length - 1; i > -1; i--) {
                     var resolution = this.camereResolutionList.quickScan[i];
                     try {
                         var temp_videoConstraints: any = {
@@ -470,11 +460,13 @@ export class Meeting {
                 }
             }
             var videoConstraints: any = {
+                frameRate: { ideal: 10, max: 15 }
             };
             if (activeResolution != null) {
                 videoConstraints = {
                     width: { ideal: activeResolution.width },
                     height: { ideal: activeResolution.height },
+                    frameRate: { ideal: 10, max: 15 }
                 }
             }
             var audioConstraints: any = { 'echoCancellation': true };
@@ -553,15 +545,15 @@ export class Meeting {
     public async enableVideo(camera: MediaDeviceInfo = null) {
         try {
             var mobil = false;
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                mobil = true;
-                console.log("device is mobile");
-            } else {
-                console.log("device is not mobile");
-            }
+            /* if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                 mobil = true;
+                 console.log("device is mobile");
+             } else {
+                 console.log("device is not mobile");
+             }*/
             var activeResolution: CameraResolution = null;
             if (!mobil) {
-                for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
+                for (var i = this.camereResolutionList.quickScan.length - 1; i > -1; i--) {
                     var resolution = this.camereResolutionList.quickScan[i];
                     try {
                         var temp_videoConstraints: any = {
@@ -585,11 +577,13 @@ export class Meeting {
             }
 
             var videoConstraints: any = {
+                frameRate: { ideal: 10, max: 15 }
             };
             if (activeResolution != null) {
                 videoConstraints = {
                     width: { ideal: activeResolution.width },
                     height: { ideal: activeResolution.height },
+                    frameRate: { ideal: 10, max: 15 }
                 }
             }
             if (camera != null) {

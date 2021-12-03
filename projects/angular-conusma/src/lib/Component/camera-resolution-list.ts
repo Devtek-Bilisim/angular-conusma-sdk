@@ -58,20 +58,7 @@ export class CameraResolutionList
                 "width": 320,
                 "height": 240,
                 "ratio": "4:3"
-            },
-            {
-                "label": "QCIF",
-                "width": 176,
-                "height": 144,
-                "ratio": "4:3"
-            },
-            {
-                "label": "QQVGA",
-                "width": 160,
-                "height": 120,
-                "ratio": "4:3"
             }
-        
         ];
     }
     public quickScan:CameraResolution[] = new Array();

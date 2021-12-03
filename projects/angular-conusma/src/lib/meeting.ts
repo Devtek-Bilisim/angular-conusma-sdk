@@ -133,6 +133,30 @@ export class Meeting {
             console.error("updateAndConsumeConsumer" + error);
         }
     }
+    public async getMeetingUser(refresh:boolean)
+    {
+        try {
+            var dataMeetingUser = {
+                MeetingUserId: this.activeUser.Id
+            };
+            var user  = this.activeUser;
+            if(refresh)
+            {
+                user = <MeetingUserModel>await this.appService.GetMyMeetingUser(dataMeetingUser);
+            }
+            if(this.activeConnection != null)
+            {
+                this.activeConnection.user = user;
+            }
+            if(this.activeUser != null)
+            {
+                this.activeUser = user;
+            }
+            return user;
+        } catch (error:any) {
+            throw new ConusmaException("getMeetingUser", "cannot close, please check exception", error);
+        }
+    }
     private async updateMyMeetingUser() {
         try {
             var dataMeetingUser = {

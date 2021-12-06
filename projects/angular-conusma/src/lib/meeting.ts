@@ -297,21 +297,76 @@ export class Meeting {
 
         });
     }
+    private async mediaServerConnectionLost(mediaServer:MediaServer)
+    {
+        console.log("conenction lost Start Reconnect");
+        if(mediaServer != null)
+        {
+            for (let item of mediaServer.consumerTransports) {
+                var connection_ = this.connections.find(us => us.user.Id == item.MeetingUserId);
+                console.log("connection delete control");
+                if(connection_ != null)
+                {
+                    console.log("connection deleted 1");
+                    connection_.mediaServer = null;
+                   await this.closeConsumer(connection_);
+                   console.log("connection deleted 2");
 
+                }
+            };
+            if(mediaServer.producerTransport != null)
+            {
+                if(this.activeConnection.mediaServer.id == mediaServer.id)
+                {
+                    this.activeConnection.mediaServer = null;
+                    var server_index = this.mediaServers.findIndex(us => us.id == mediaServer.id);
+                    this.removeItemOnce(this.mediaServers,server_index);
+                    this.meetingEvents.emit("mediaserver_conenction_lost");
+                    var isConnect = false;
+                    for(var i = 0 ; i < 5 ;i++)
+                    {
+                        try {
+                            await this.produce();
+                            isConnect = true;
+                            await this.connectMeeting();
+                            break;
+                        } catch (error) {
+                            this.meetingEvents.emit("mediaserver_conenction_lost_try");
+                            await this.sleep(3000);
+                        }
+                    }
+                    if(!isConnect)
+                    {
+                        this.meetingEvents.emit("mediaserver_conenction_lost_reconnect_error");
+                        return;
+                    }
+                    this.meetingEvents.emit("mediaserver_conenction_lost_reconnect_successful");
+                }
+            }
+            else
+            {
+
+            }
+        }
+        this.workerModel.MeetingUsers = "";
+        console.log("conenction lost end Reconnect");
+
+    }
     private async createMediaServer(_MediaServerModel: MediaServerModel) {
 
         var mediaServer = this.mediaServers.find(us => us.id == _MediaServerModel.Id);
         if (mediaServer == null || mediaServer == undefined) {
             mediaServer = new MediaServer(this.appService);
             mediaServer.id = _MediaServerModel.Id;
-            mediaServer.socket = io(_MediaServerModel.ConnectionDnsAddress + ":" + _MediaServerModel.Port);
+            mediaServer.socket = io(_MediaServerModel.ConnectionDnsAddress + ":" + _MediaServerModel.Port,{reconnection:false});
             this.mediaServers.push(mediaServer);
             var userInfoData = { 'MeetingUserId': this.activeUser.Id, 'Token': this.appService.getJwtToken() };
             let setUserInfo = await this.signal('UserInfo', userInfoData, mediaServer.socket);
             await mediaServer.load();
             mediaServer.socket.on('disconnect', async () => {
                 if (!this.isClosedRequestRecieved) {
-                    throw new ConusmaException("mediaserverconnection", "mediaserverconnection disconnect");
+                   this.mediaServerConnectionLost(mediaServer);
+                    // throw new ConusmaException("mediaserverconnection", "mediaserverconnection disconnect");
                 }
             });
         }
@@ -960,6 +1015,9 @@ export class Meeting {
         } catch (error: any) {
             throw new ConusmaException("sendReaction", "not send Reaction", error);
         }
+    }
+    private sleep(ms: number) {
+        return new Promise( resolve => setTimeout(resolve, ms) );
     }
     public async sendChatMessage(to: string, message: string) {
         try {

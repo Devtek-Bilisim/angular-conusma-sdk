@@ -37,16 +37,19 @@ export class MediaServer {
             if(this.producerTransport == null)
             {
                 await this.createProducerTransport();
+                console.log("createProducerTransport");
             }
             if (localStream.getVideoTracks().length > 0 && this.videoProducer == null) {
                 await this.createProducer(localStream, 'video');
                 user.Camera = true;
                 user.ActiveCamera = true;
+                console.log("createVideoProducer");
             }
             if (localStream.getAudioTracks().length > 0 && this.audioProducer == null) {
                 await this.createProducer(localStream, 'audio');
                 user.Mic = true;
                 user.ActiveMic = true;
+                console.log("createAudioProducer");
             }
             user.MediaServerId = this.id;
             this.appService.ConnectMeeting(user);

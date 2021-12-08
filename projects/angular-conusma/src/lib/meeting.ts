@@ -323,7 +323,7 @@ export class Meeting {
                     this.removeItemOnce(this.mediaServers,server_index);
                     this.meetingEvents.emit("mediaserver_conenction_lost");
                     var isConnect = false;
-                    for(var i = 0 ; i < 5 ;i++)
+                    for(var i = 0 ; i < 10 ;i++)
                     {
                         try {
                             await this.produce();
@@ -332,7 +332,7 @@ export class Meeting {
                             break;
                         } catch (error) {
                             this.meetingEvents.emit("mediaserver_conenction_lost_try");
-                            await this.sleep(3000);
+                            await this.sleep(5000);
                         }
                     }
                     if(!isConnect)

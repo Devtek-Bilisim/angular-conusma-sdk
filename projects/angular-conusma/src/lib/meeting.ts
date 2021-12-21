@@ -450,6 +450,7 @@ export class Meeting {
                         };
                         var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
                         if (testStream != null) {
+                            testStream.getTracks().forEach((track)=>track.stop());
                             activeResolution = resolution;
                             console.log("tespit edilen en yüksek çözünürlük : " + activeResolution.label);
                             break;
@@ -460,13 +461,13 @@ export class Meeting {
                 }
             }
             var videoConstraints: any = {
-                frameRate: { ideal: 10, max: 15 }
+                frameRate: { ideal: 10, max: 30 }
             };
             if (activeResolution != null) {
                 videoConstraints = {
                     width: { ideal: activeResolution.width },
                     height: { ideal: activeResolution.height },
-                    frameRate: { ideal: 10, max: 15 }
+                    frameRate: { ideal: 10, max: 30 }
                 }
             }
             var audioConstraints: any = { 'echoCancellation': true };
@@ -566,6 +567,7 @@ export class Meeting {
                         };
                         var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
                         if (testStream != null) {
+                            testStream.getTracks().forEach((track)=>track.stop());
                             activeResolution = resolution;
                             console.log("tespit edilen en yüksek çözünürlük : " + activeResolution.label);
                             break;
@@ -577,13 +579,13 @@ export class Meeting {
             }
 
             var videoConstraints: any = {
-                frameRate: { ideal: 10, max: 15 }
+                frameRate: { ideal: 10, max: 30 }
             };
             if (activeResolution != null) {
                 videoConstraints = {
                     width: { ideal: activeResolution.width },
                     height: { ideal: activeResolution.height },
-                    frameRate: { ideal: 10, max: 15 }
+                    frameRate: { ideal: 10, max: 30 }
                 }
             }
             if (camera != null) {

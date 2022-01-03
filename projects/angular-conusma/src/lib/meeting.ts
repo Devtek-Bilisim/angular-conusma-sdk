@@ -363,22 +363,24 @@ export class Meeting {
         this.videoInputs = [];
         if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
             var deviceList = await navigator.mediaDevices.enumerateDevices();
-            for (var i = 0; i !== deviceList.length; ++i) {
-                var deviceInfo = deviceList[i];
-                var option = document.createElement('option');
-                option.value = deviceInfo.deviceId;
-                if (deviceInfo.kind === 'audioinput') {
-                    this.audioInputs.push(deviceInfo);
-                } else if (deviceInfo.kind === 'audiooutput') {
-                    this.audioOutputs.push(deviceInfo);
-                    if (deviceInfo.label.toLowerCase().includes("default")) {
-                        this.activeSpeaker = deviceInfo.deviceId;
-                    }
-                } else if (deviceInfo.kind === 'videoinput') {
-                    this.videoInputs.push(deviceInfo)
+            var audioDList = deviceList.filter(us => us.kind == "audioinput");
+            var videoDList = deviceList.filter(us => us.kind == "videoinput");
+            var audiooutputList = deviceList.filter(us => us.kind == "audiooutput");
+            for (var i = 0; i < audioDList.length; i++) {
+                var device_obj = <MediaDeviceInfo>{ deviceId: audioDList[i].deviceId, groupId: audioDList[i].groupId, kind: audioDList[i].kind, label: audioDList[i].label == '' ? 'Audio Input ' + i : audioDList[i].label };
+                this.audioInputs.push(device_obj);
+            }
+            for (var i = 0; i < videoDList.length; i++) {
+                var device_obj = <MediaDeviceInfo>{ deviceId: videoDList[i].deviceId, groupId: videoDList[i].groupId, kind: videoDList[i].kind, label: videoDList[i].label == '' ? 'Video Input ' + i : videoDList[i].label };
+                this.videoInputs.push(device_obj);
+            }
+            for (var i = 0; i < audiooutputList.length; i++) {
+                var device_obj = <MediaDeviceInfo>{ deviceId: audiooutputList[i].deviceId, groupId: audiooutputList[i].groupId, kind: audiooutputList[i].kind, label: audiooutputList[i].label == '' ? 'Audio OutPut ' + i : audiooutputList[i].label };
+                this.audioOutputs.push(device_obj);
+                if (audiooutputList[i].label.toLowerCase().includes("default")) {
+                    this.activeSpeaker = audiooutputList[i].deviceId;
                 }
             }
-
         }
     }
     public async switchCamera(camera: MediaDeviceInfo) {
@@ -450,7 +452,7 @@ export class Meeting {
                         };
                         var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
                         if (testStream != null) {
-                            testStream.getTracks().forEach((track)=>track.stop());
+                            testStream.getTracks().forEach((track) => track.stop());
                             activeResolution = resolution;
                             console.log("tespit edilen en yüksek çözünürlük : " + activeResolution.label);
                             break;
@@ -472,10 +474,10 @@ export class Meeting {
             }
             var audioConstraints: any = { 'echoCancellation': true };
 
-            if (camera != null) {
+            if (camera != null && camera.deviceId.toLowerCase() !="default") {
                 videoConstraints.deviceId = { exact: camera.deviceId };
             }
-            if (microphone != null) {
+            if (microphone != null && microphone.deviceId.toLowerCase() !="default") {
                 audioConstraints.deviceId = { exact: microphone.deviceId };
             }
             const constraints: any = {
@@ -512,7 +514,7 @@ export class Meeting {
         try {
             var audioConstraints: any = { 'echoCancellation': true };
 
-            if (microphone != null) {
+            if (microphone != null && microphone.deviceId.toLowerCase() !="default") {
                 audioConstraints.deviceId = { exact: microphone.deviceId };
             }
             const constraints: any = {
@@ -567,7 +569,7 @@ export class Meeting {
                         };
                         var testStream: MediaStream = await navigator.mediaDevices.getUserMedia(tmp_constraints);
                         if (testStream != null) {
-                            testStream.getTracks().forEach((track)=>track.stop());
+                            testStream.getTracks().forEach((track) => track.stop());
                             activeResolution = resolution;
                             console.log("tespit edilen en yüksek çözünürlük : " + activeResolution.label);
                             break;
@@ -588,7 +590,7 @@ export class Meeting {
                     frameRate: { ideal: 10, max: 30 }
                 }
             }
-            if (camera != null) {
+            if (camera != null && camera.deviceId.toLowerCase() != "default") {
                 videoConstraints.deviceId = { exact: camera.deviceId };
             }
             const constraints: any = {

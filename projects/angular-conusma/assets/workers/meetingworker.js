@@ -18,7 +18,7 @@ function Start(){
             }
           };
     }
-    setTimeout("Start()", 2000);
+    setTimeout(Start(), 2000);
 }
 function IAmHere()
 {
@@ -32,7 +32,7 @@ function IAmHere()
             MeetingUserId: MeetingUserId
         }));
     }
-    setTimeout("IAmHere()", 20000);
+    setTimeout(IAmHere(), 20000);
 
 }
 onmessage = function(e) {

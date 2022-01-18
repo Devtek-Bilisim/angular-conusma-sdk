@@ -7,13 +7,13 @@ export class MediaServer {
     id: number = 0;
     socket: any = null;
     device: any = null;
-    broadcastTransport:any = null;
-    producerTransport:any = null;
-    videoProducer:any = null;
-    audioProducer:any;
-    consumerTransports:any = [];
+    broadcastTransport: any = null;
+    producerTransport: any = null;
+    videoProducer: any = null;
+    audioProducer: any;
+    consumerTransports: any = [];
 
-    constructor(private appService:AppService) {}
+    constructor(private appService: AppService) { }
 
     public async load() {
         let routerRtpCapabilities = await this.signal('getRouterRtpCapabilities', null, this.socket);
@@ -27,15 +27,14 @@ export class MediaServer {
         this.device = new mediaServerClient.Device({
             handlerName: handlerName
         });
-     
+
         console.log("device loading...");
         await this.device.load({ routerRtpCapabilities });
         console.log("device loaded.");
     }
-    public async produce(user:MeetingUserModel, localStream:MediaStream) {
-        try { 
-            if(this.producerTransport == null)
-            {
+    public async produce(user: MeetingUserModel, localStream: MediaStream) {
+        try {
+            if (this.producerTransport == null) {
                 await this.createProducerTransport();
             }
             if (localStream.getVideoTracks().length > 0 && this.videoProducer == null) {
@@ -51,12 +50,12 @@ export class MediaServer {
             user.MediaServerId = this.id;
             this.appService.ConnectMeeting(user);
 
-        } catch (error:any) {
+        } catch (error: any) {
             throw new ConusmaException("produce", "can not send stream, please check exception", error);
         }
     }
 
-    public async replaceTrack(kind:string, stream:MediaStream) {
+    public async replaceTrack(kind: string, stream: MediaStream) {
         if (kind == "video") {
             await this.videoProducer.replaceTrack({ track: stream.getVideoTracks()[0] });
             this.videoProducer.track.enabled = stream.getVideoTracks()[0].enabled;
@@ -70,7 +69,7 @@ export class MediaServer {
         try {
             console.log("createBroadcastTransport started.");
             var transportOptions: any = await this.signal('createBroadcastTransport', {}, this.socket);
-    
+
             this.broadcastTransport = await this.device.createSendTransport(transportOptions);
             this.broadcastTransport.on('connect', async ({ dtlsParameters }: any, callback: any, errback: any) => {
                 let error = await this.signal('connectBroadcastTransport', {
@@ -79,7 +78,7 @@ export class MediaServer {
                 }, this.socket);
                 callback();
             });
-            
+
             this.producerTransport.on('broadcast', async ({ kind, rtpParameters, appData }: any,
                 callback: any, errback: any) => {
                 let paused = false;
@@ -93,57 +92,91 @@ export class MediaServer {
                 }, this.socket);
                 callback(id)
             });
-        } catch (error:any) {
+        } catch (error: any) {
             throw new ConusmaException("createBroadcastTransport", "createBroadcastTransport error", error);
         }
     }
     private async createProducerTransport() {
         try {
-                console.log("createProducerTransport started.");
-                var transportOptions: any = await this.signal('createProducerTransport', {}, this.socket);
-    
-                this.producerTransport = await this.device.createSendTransport(transportOptions);
-                this.producerTransport.on('connect', async ({ dtlsParameters }: any, callback: any, errback: any) => {
-                    let error = await this.signal('connectProducerTransport', {
-                        transportId: transportOptions.id,
-                        dtlsParameters
-                    }, this.socket);
-                    callback();
-                });
-                
-                this.producerTransport.on('produce', async ({ kind, rtpParameters, appData }: any,
-                    callback: any, errback: any) => {
-                    let paused = false;
-                    paused = false;
-                    let id = await this.signal('produce', {
-                        transportId: transportOptions.id,
-                        kind,
-                        rtpParameters,
-                        paused,
-                        appData
-                    }, this.socket);
-                    callback(id)
-                });
-        } catch (error:any) {
+            console.log("createProducerTransport started.");
+            var transportOptions: any = await this.signal('createProducerTransport', {}, this.socket);
+
+            this.producerTransport = await this.device.createSendTransport(transportOptions);
+            this.producerTransport.on('connect', async ({ dtlsParameters }: any, callback: any, errback: any) => {
+                let error = await this.signal('connectProducerTransport', {
+                    transportId: transportOptions.id,
+                    dtlsParameters
+                }, this.socket);
+                callback();
+            });
+
+            this.producerTransport.on('produce', async ({ kind, rtpParameters, appData }: any,
+                callback: any, errback: any) => {
+                let paused = false;
+                paused = false;
+                let id = await this.signal('produce', {
+                    transportId: transportOptions.id,
+                    kind,
+                    rtpParameters,
+                    paused,
+                    appData
+                }, this.socket);
+                callback(id)
+            });
+        } catch (error: any) {
             throw new ConusmaException("createProducerTransport", "createProducerTransport error", error);
         }
     }
-
+    interval:any;
+    startStarts()
+    {
+      this.interval = setInterval(()=>{
+        this.getStats();
+      }, (3000));
+    }
+    private async getStats()
+    {
+      if( this.producerTransport != null)
+      {
+      var _stats:RTCStatsReport = (await  this.producerTransport.getStats());
+      var stats:string[] = [];
+      _stats.forEach((data)=>{
+        if(data.type=="outbound-rtp")
+        {
+          Object.keys(data).forEach((key)=> {
+            var value:string = data[key];
+            var addValue = key+" : "+value;
+           stats.push(addValue);
+        });
+  
+        }
+      });
+      console.log(stats);
+      }
+      else
+      {
+        clearInterval(this.interval);
+      }
+    }
+  
     public async createProducer(localStream: MediaStream, kind: string) {
         try {
             if (kind == 'video' && this.videoProducer == null) {
                 const videoTrack = localStream.getVideoTracks()[0];
                 this.videoProducer = await this.producerTransport.produce({
                     track: videoTrack,
-                    encodings: [
-                        
-                    ],
+                    encodings:
+                        [
+                            { maxBitrate: 15000000, scaleResolutionDownBy: 1 }
+                        ],
                     codecOptions:
                     {
-                        videoGoogleStartBitrate: 1000
+                        videoGoogleStartBitrate: 10000,
+                        videoGoogleMinBitrate:10000
                     },
                     appData: { mediaTag: 'video' }
                 });
+                this.startStarts();
             }
             else if (kind == 'audio' && this.audioProducer == null) {
                 this.audioProducer = await this.producerTransport.produce({
@@ -160,7 +193,7 @@ export class MediaServer {
                   await this.mediaServerClient.AudioProducer.rtpSender.setParameters(aparameters);*/
             }
 
-        } catch (error:any) {
+        } catch (error: any) {
             console.error("createProducer error. " + error);
         }
     }
@@ -185,17 +218,15 @@ export class MediaServer {
 
     public async consume(producerUser: MeetingUserModel) {
         try {
-            if(this.consumerTransports.find((us:any) => us.MeetingUserId == producerUser.Id) == null)
-            {
+            if (this.consumerTransports.find((us: any) => us.MeetingUserId == producerUser.Id) == null) {
                 var result = await this.createConsumerTransport(this, producerUser);
                 this.consumerTransports.push(result);
                 return result;
             }
-            else
-            {
-                return this.consumerTransports.find((us:any) => us.MeetingUserId == producerUser.Id);
+            else {
+                return this.consumerTransports.find((us: any) => us.MeetingUserId == producerUser.Id);
             }
-        } catch (error:any) {
+        } catch (error: any) {
             throw new ConusmaException("consume", producerUser.Id + "The stream of the user is currently not captured. User connection information is out of date.", error);
         }
     }
@@ -228,22 +259,20 @@ export class MediaServer {
 
     public async addConsumer(consumerTransport: any, kind: string) {
         if (consumerTransport != null) {
-            if (kind == "video" ) {
-                if(consumerTransport.videoConsumer == null)
-                {
+            if (kind == "video") {
+                if (consumerTransport.videoConsumer == null) {
                     consumerTransport.videoConsumer = await this.consumeTransport(consumerTransport, "video");
                     this.resumeConsumer(consumerTransport, "video");
                     consumerTransport.RemoteStream.addTrack(consumerTransport.videoConsumer.track);
                 }
             } else {
-                if(consumerTransport.audioConsumer == null)
-                {
+                if (consumerTransport.audioConsumer == null) {
                     consumerTransport.audioConsumer = await this.consumeTransport(consumerTransport, "audio");
                     this.resumeConsumer(consumerTransport, "audio");
                     consumerTransport.RemoteStream.addTrack(consumerTransport.audioConsumer.track);
                     consumerTransport.audioConsumer.resume();
                 }
-              
+
             }
         }
     }
@@ -275,7 +304,7 @@ export class MediaServer {
         return consumer;
     }
 
-      
+
     public async pauseConsumer(consumerTransport: any, kind: string) {
         try {
             if (consumerTransport != null && consumerTransport.videoConsumer != null) {
@@ -296,7 +325,7 @@ export class MediaServer {
                     consumerTransport.RemoteStream.removeTrack(consumerTransport.audioConsumer.track);
                 }
             }
-        } catch (error:any) {
+        } catch (error: any) {
 
         }
     }
@@ -308,13 +337,13 @@ export class MediaServer {
                     if (item.transport) {
                         item.transport.close();
                     }
-                    await this.signal('removeConsumerTransport', {'consumerTransportId':item.transportId},this.socket);
+                    await this.signal('removeConsumerTransport', { 'consumerTransportId': item.transportId }, this.socket);
                     break;
                 }
                 index++;
             };
             this.removeItemOnce(this.consumerTransports, index);
-        } catch (error:any) {
+        } catch (error: any) {
             throw new ConusmaException("closeConsumer", "consumer cannot be closed, please check exception", error);
         }
 
@@ -330,13 +359,13 @@ export class MediaServer {
     public async closeProducer() {
         try {
             if (this.producerTransport)
-                this.producerTransport.close(); 
-                await this.signal('produceclose',{'kind':'video'},this.socket);
-                await this.signal('produceclose',{'kind':'audio'},this.socket);
-        } catch (error:any) {
+                this.producerTransport.close();
+            await this.signal('produceclose', { 'kind': 'video' }, this.socket);
+            await this.signal('produceclose', { 'kind': 'audio' }, this.socket);
+        } catch (error: any) {
             throw new ConusmaException("closeProducer", "producer cannot be closed, please check exception ", error);
         }
 
     }
-    
+
 }

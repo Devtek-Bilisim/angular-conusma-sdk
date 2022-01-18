@@ -439,7 +439,7 @@ export class Meeting {
              }*/
             var activeResolution: CameraResolution = null;
             if (!mobil) {
-                for (var i = this.camereResolutionList.quickScan.length - 1; i > -1; i--) {
+                for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
                     var resolution = this.camereResolutionList.quickScan[i];
                     try {
                         var temp_videoConstraints: any = {
@@ -463,13 +463,11 @@ export class Meeting {
                 }
             }
             var videoConstraints: any = {
-                frameRate: { ideal: 10, max: 30 }
             };
             if (activeResolution != null) {
                 videoConstraints = {
                     width: { ideal: activeResolution.width },
                     height: { ideal: activeResolution.height },
-                    frameRate: { ideal: 10, max: 30 }
                 }
             }
             var audioConstraints: any = { 'echoCancellation': true };
@@ -556,7 +554,7 @@ export class Meeting {
              }*/
             var activeResolution: CameraResolution = null;
             if (!mobil) {
-                for (var i = this.camereResolutionList.quickScan.length - 1; i > -1; i--) {
+                for (var i = 0; i < this.camereResolutionList.quickScan.length; i++) {
                     var resolution = this.camereResolutionList.quickScan[i];
                     try {
                         var temp_videoConstraints: any = {
@@ -581,13 +579,11 @@ export class Meeting {
             }
 
             var videoConstraints: any = {
-                frameRate: { ideal: 10, max: 30 }
             };
             if (activeResolution != null) {
                 videoConstraints = {
                     width: { ideal: activeResolution.width },
                     height: { ideal: activeResolution.height },
-                    frameRate: { ideal: 10, max: 30 }
                 }
             }
             if (camera != null && camera.deviceId.toLowerCase() != "default") {

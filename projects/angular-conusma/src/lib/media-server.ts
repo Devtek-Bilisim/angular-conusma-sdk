@@ -171,8 +171,8 @@ export class MediaServer {
                         ],
                     codecOptions:
                     {
-                        videoGoogleStartBitrate: 10000,
-                        videoGoogleMinBitrate:10000
+                        videoGoogleStartBitrate: 12000,
+                        videoGoogleMinBitrate:12000
                     },
                     appData: { mediaTag: 'video' }
                 });

@@ -540,6 +540,8 @@ export class Meeting {
                 this.localStream = newStream;
             }
             await this.updateStreamProducerTrack(false, true);
+            await this.appService.UpdateMeetingUser(this.activeUser);
+
         } catch (error: any) {
             throw new ConusmaException("enableAudio", "can not read microphone, please check exception.", error);
         }
@@ -619,6 +621,8 @@ export class Meeting {
                 this.localStream = newStream;
             }
             await this.updateStreamProducerTrack(true, false);
+            await this.appService.UpdateMeetingUser(this.activeUser);
+
         } catch (error: any) {
             throw new ConusmaException("enableVideo", "can not read camera, please check exception.", error);
         }

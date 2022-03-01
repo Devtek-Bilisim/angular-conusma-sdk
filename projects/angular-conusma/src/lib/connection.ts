@@ -91,8 +91,9 @@ export class Connection {
           }
         await this.appService.RaiseYourHand(data);
     }
-    public async invite(EMail: string) {
+    public async invite(EMail: string,ClientUrl:string) {
         var data = {
+            "clientUrl":ClientUrl,
             "eMail": EMail,
             "id": this.user.MeetingId
         }

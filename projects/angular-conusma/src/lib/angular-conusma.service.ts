@@ -122,9 +122,9 @@ export class AngularConusmaService {
     };
     return await this.appService.signupConfirm(data);
   }
-  public async forgotPassword(email: string)
+  public async forgotPassword(email: string,url:string="")
   {
-    return await this.appService.forgotPassword(email);
+    return await this.appService.forgotPassword(email,url);
   } 
   public async controlForgotPasswordCode(code:string,password:string)  
   {

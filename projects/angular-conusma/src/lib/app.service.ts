@@ -472,9 +472,10 @@ export class AppService {
     });
   }
 
-  public async forgotPassword(email: string){
+  public async forgotPassword(email: string,url:string=""){
     var data = {
-      'EMail':email
+      'EMail':email,
+      'Url':url
     };
     return await this.httpPost("User/ForgotPassword", data).toPromise().then((res)=>{
       return <SuccessApiMesage>res;

@@ -10,10 +10,10 @@ import { map, mapTo, catchError, throwIfEmpty, tap } from "rxjs/operators";
 import { Router } from '@angular/router';
 import { AlertController, Platform } from '@ionic/angular';
 import { Meeting } from './meeting';
-import { MeetingModel } from './Models/meeting-model';
 import { UserModel } from './Models/user-model';
 import { MeetingUserModel } from './Models/meeting-user-model';
 import { CountryCode } from './Models/country-code';
+import { MeetingModel } from './Models/meeting-model';
 
 @Injectable({
   providedIn: 'root'
@@ -22,8 +22,8 @@ export class AngularConusmaService {
   private apiUrl: string = "";
   private deviceId: string = "";
   private appService: AppService;
-  public user: User;
-  public publicUser: GuestUser;
+  public user: User = null;
+  public publicUser: GuestUser = null;
   public activeMeeting: Meeting;
   constructor(private http: HttpClient, private router: Router, private alertController: AlertController, private platform: Platform) {
 
@@ -38,15 +38,13 @@ export class AngularConusmaService {
     try {
       if (this.user == null && this.publicUser == null) {
         console.log("user loading...");
-        if (await this.appService.isTokenValid()) {
-          console.log("token is valid... user loading...");
-          var user_raw_data = sessionStorage.getItem("UserData");
-          var _user_data = JSON.parse(user_raw_data);
-          if (_user_data.User_Type == 0) {
+        var userData = await this.appService.isTokenValid();
+        if (userData != null) {
+          if (userData.User_Type == 0) {
             this.publicUser = new GuestUser(this.appService);
             await this.publicUser.load();
           }
-          else if (_user_data.User_Type == 1) {
+          else if (userData.User_Type == 1) {
             this.user = new User(this.appService);
             await this.user.load();
           }
@@ -61,6 +59,10 @@ export class AngularConusmaService {
       throw new ConusmaException("load", "can't load user data", error);
 
     }
+  }
+  public async sendEMailVerification()
+  {
+    return await this.appService.sendEMailVerification();
   }
   public getStorageMeeting() {
     try {
@@ -81,38 +83,55 @@ export class AngularConusmaService {
     }
   }
 
-  public storeTokens(jwtToken: string, username: string, isloggedin: string, rememberme: string) {
-    localStorage.setItem("rememberme", rememberme);
-    if (rememberme) {
-      localStorage.setItem("JWT_TOKEN", jwtToken);
-      localStorage.setItem('isLoggedin', isloggedin);
-      localStorage.setItem('username', username);
-      localStorage.removeItem("PublicToken");
-      localStorage.removeItem("PublicUserData");
-    } else {
-      sessionStorage.setItem("JWT_TOKEN", jwtToken);
-      sessionStorage.setItem('isLoggedin', isloggedin);
-      sessionStorage.setItem('username', username);
-      localStorage.removeItem('rememberme');
-      localStorage.removeItem("PublicToken");
-      localStorage.removeItem("PublicUserData");
-    }
-  }
+
 
 
   public IsUser() {
-    let userData = sessionStorage.getItem("UserData");
-    if (userData != null) {
-      var user = JSON.parse(userData);
-      if (user.User_Type == "1") {
-        return true;
+    let rememberme =  <boolean>JSON.parse(localStorage.getItem("rememberme"));
+    if (rememberme) {
+      let userData = localStorage.getItem("UserData");
+      if (userData != null) {
+        var user = JSON.parse(userData);
+        if (user.User_Type == "1") {
+          return true;
+        }
+      }
+    } else {
+      let userData = sessionStorage.getItem("UserData");
+      if (userData != null) {
+        var user = JSON.parse(userData);
+        if (user.User_Type == "1") {
+          return true;
+        }
       }
     }
+   
     return false;
   }
-
+  public async signup(name:string,surname:string,username:string,email:string,password:string)
+  {
+    var data = {
+      'Name':name,'SurName':surname,'UserName':username,'EMail':email,'Password':password
+    };
+    return await this.appService.signup(data);
+  }
+  public async signupConfirim(code:string,email:string)
+  {
+    var data = {
+      'Code':code,'EMail':email,
+    };
+    return await this.appService.signupConfirm(data);
+  }
+  public async forgotPassword(email: string,url:string="")
+  {
+    return await this.appService.forgotPassword(email,url);
+  } 
+  public async controlForgotPasswordCode(code:string,password:string)  
+  {
+    return await this.appService.controlForgotPasswordCode(code,password);
+  } 
   public getUserName() {
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme = <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
       return localStorage.getItem("username");
     } else {
@@ -121,7 +140,7 @@ export class AngularConusmaService {
   }
 
   public getIsLoggedIn() {
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme = <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
       return localStorage.getItem("isLoggedin");
     } else {
@@ -135,6 +154,10 @@ export class AngularConusmaService {
     localStorage.removeItem('rememberme');
     sessionStorage.removeItem("JWT_TOKEN");
     sessionStorage.removeItem('isLoggedin');
+    sessionStorage.removeItem('UserData');
+    localStorage.removeItem("UserData");
+    this.user = null;
+    this.publicUser = null;
   }
 
   async presentAlert(message: string, header: string = "Error", url: string = "", callback = () => { }) {
@@ -180,29 +203,19 @@ export class AngularConusmaService {
 
     await alert.present();
   }
-  private stroageSaveUserData(userData:any)
-  {
-    let rememberme = localStorage.getItem("rememberme");
-    if(rememberme)
-    {
-      localStorage.setItem("UserData", JSON.stringify(userData));
-      localStorage.setItem('JWT_TOKEN', userData.Token);
-    }
-    else
-    {
-      sessionStorage.setItem("UserData", JSON.stringify(userData));
-      sessionStorage.setItem('JWT_TOKEN', userData.Token);
-    }
-  }
+
   public async isUserLoggedIn() {
     try {
       var token = this.appService.getJwtToken();
       if (token != undefined && token != null) {
         var user_data = await this.appService.isTokenValid();
-        this.stroageSaveUserData(user_data);
-        this.user = new User(this.appService);
-        this.user.userInfo = user_data;
-        return true;
+        if(user_data.User_Type == 1)
+        {
+          this.appService.saveUserData(user_data);
+          this.user = new User(this.appService);
+          this.user.userInfo = user_data;
+          return true;
+        }
       }
     } catch (error) {
       return false;
@@ -223,7 +236,7 @@ export class AngularConusmaService {
 
   public async login(data: { userkey: string, password: string, deviceId: string }) {
     var user_data = await this.appService.login(data);
-    this.stroageSaveUserData(user_data);
+    this.appService.saveUserData(user_data);
     this.user = new User(this.appService);
     this.user.userInfo = user_data;
     this.appService.saveUserData(this.user.userInfo);
@@ -231,7 +244,7 @@ export class AngularConusmaService {
   }
   public async Googlelogin(data: { GoogleToken: string, deviceId: string }) {
     var user_data = await this.appService.Googlelogin(data);
-    this.stroageSaveUserData(user_data);
+    this.appService.saveUserData(user_data);
     this.user = new User(this.appService);
     this.user.userInfo = user_data;
     this.appService.saveUserData(this.user.userInfo);

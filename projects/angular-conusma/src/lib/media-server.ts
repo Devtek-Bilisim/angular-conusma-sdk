@@ -7,8 +7,9 @@ export class MediaServer {
     id: number = 0;
     socket: any = null;
     device: any = null;
-    producerTransport:any;
-    videoProducer:any;
+    broadcastTransport:any = null;
+    producerTransport:any = null;
+    videoProducer:any = null;
     audioProducer:any;
     consumerTransports:any = [];
 
@@ -33,13 +34,16 @@ export class MediaServer {
     }
     public async produce(user:MeetingUserModel, localStream:MediaStream) {
         try { 
-            await this.createProducerTransport();
-            if (localStream.getVideoTracks().length > 0) {
+            if(this.producerTransport == null)
+            {
+                await this.createProducerTransport();
+            }
+            if (localStream.getVideoTracks().length > 0 && this.videoProducer == null) {
                 await this.createProducer(localStream, 'video');
                 user.Camera = true;
                 user.ActiveCamera = true;
             }
-            if (localStream.getAudioTracks().length > 0) {
+            if (localStream.getAudioTracks().length > 0 && this.audioProducer == null) {
                 await this.createProducer(localStream, 'audio');
                 user.Mic = true;
                 user.ActiveMic = true;
@@ -62,6 +66,37 @@ export class MediaServer {
         }
     }
 
+    private async createBroadcastTransport() {
+        try {
+            console.log("createBroadcastTransport started.");
+            var transportOptions: any = await this.signal('createBroadcastTransport', {}, this.socket);
+    
+            this.broadcastTransport = await this.device.createSendTransport(transportOptions);
+            this.broadcastTransport.on('connect', async ({ dtlsParameters }: any, callback: any, errback: any) => {
+                let error = await this.signal('connectBroadcastTransport', {
+                    transportId: transportOptions.id,
+                    dtlsParameters
+                }, this.socket);
+                callback();
+            });
+            
+            this.producerTransport.on('broadcast', async ({ kind, rtpParameters, appData }: any,
+                callback: any, errback: any) => {
+                let paused = false;
+                paused = false;
+                let id = await this.signal('broadcast', {
+                    transportId: transportOptions.id,
+                    kind,
+                    rtpParameters,
+                    paused,
+                    appData
+                }, this.socket);
+                callback(id)
+            });
+        } catch (error:any) {
+            throw new ConusmaException("createBroadcastTransport", "createBroadcastTransport error", error);
+        }
+    }
     private async createProducerTransport() {
         try {
                 console.log("createProducerTransport started.");
@@ -96,14 +131,12 @@ export class MediaServer {
 
     public async createProducer(localStream: MediaStream, kind: string) {
         try {
-            if (kind == 'video') {
+            if (kind == 'video' && this.videoProducer == null) {
                 const videoTrack = localStream.getVideoTracks()[0];
                 this.videoProducer = await this.producerTransport.produce({
                     track: videoTrack,
                     encodings: [
-                        { maxBitrate: 500000 },
-                        { maxBitrate: 1000000 },
-                        { maxBitrate: 2000000 }
+                        
                     ],
                     codecOptions:
                     {
@@ -112,7 +145,7 @@ export class MediaServer {
                     appData: { mediaTag: 'video' }
                 });
             }
-            else if (kind == 'audio') {
+            else if (kind == 'audio' && this.audioProducer == null) {
                 this.audioProducer = await this.producerTransport.produce({
                     track: localStream.getAudioTracks()[0],
                     appData: { mediaTag: 'audio' }
@@ -152,9 +185,16 @@ export class MediaServer {
 
     public async consume(producerUser: MeetingUserModel) {
         try {
-            var result = await this.createConsumerTransport(this, producerUser);
-            this.consumerTransports.push(result);
-            return result;
+            if(this.consumerTransports.find((us:any) => us.MeetingUserId == producerUser.Id) == null)
+            {
+                var result = await this.createConsumerTransport(this, producerUser);
+                this.consumerTransports.push(result);
+                return result;
+            }
+            else
+            {
+                return this.consumerTransports.find((us:any) => us.MeetingUserId == producerUser.Id);
+            }
         } catch (error:any) {
             throw new ConusmaException("consume", producerUser.Id + "The stream of the user is currently not captured. User connection information is out of date.", error);
         }
@@ -179,31 +219,31 @@ export class MediaServer {
             consumerTransport.Camera = user.Camera;
             consumerTransport.Mic = user.Mic;
             consumerTransport.ShareScreen = user.ShareScreen;
-            console.log("createConsumerTransport creating the consumer.");
-            if (user.Camera || user.ShareScreen) {
-                await this.addConsumer(consumerTransport, "video");
-            }
-
-            if (user.Mic) {
-                await this.addConsumer(consumerTransport, "audio");
-            }
+            console.log("createConsumerTransport created the consumer transport.");
             return consumerTransport;
         } else {
             throw new ConusmaException("createConsumerTransport", "No socket connection.");
         }
     }
 
-    private async addConsumer(consumerTransport: any, kind: string) {
+    public async addConsumer(consumerTransport: any, kind: string) {
         if (consumerTransport != null) {
-            if (kind == "video") {
-                consumerTransport.videoConsumer = await this.consumeTransport(consumerTransport, "video");
-                this.resumeConsumer(consumerTransport, "video");
-                consumerTransport.RemoteStream.addTrack(consumerTransport.videoConsumer.track);
+            if (kind == "video" ) {
+                if(consumerTransport.videoConsumer == null)
+                {
+                    consumerTransport.videoConsumer = await this.consumeTransport(consumerTransport, "video");
+                    this.resumeConsumer(consumerTransport, "video");
+                    consumerTransport.RemoteStream.addTrack(consumerTransport.videoConsumer.track);
+                }
             } else {
-                consumerTransport.audioConsumer = await this.consumeTransport(consumerTransport, "audio");
-                this.resumeConsumer(consumerTransport, "audio");
-                consumerTransport.RemoteStream.addTrack(consumerTransport.audioConsumer.track);
-                consumerTransport.audioConsumer.resume();
+                if(consumerTransport.audioConsumer == null)
+                {
+                    consumerTransport.audioConsumer = await this.consumeTransport(consumerTransport, "audio");
+                    this.resumeConsumer(consumerTransport, "audio");
+                    consumerTransport.RemoteStream.addTrack(consumerTransport.audioConsumer.track);
+                    consumerTransport.audioConsumer.resume();
+                }
+              
             }
         }
     }
@@ -268,6 +308,7 @@ export class MediaServer {
                     if (item.transport) {
                         item.transport.close();
                     }
+                    await this.signal('removeConsumerTransport', {'consumerTransportId':item.transportId},this.socket);
                     break;
                 }
                 index++;

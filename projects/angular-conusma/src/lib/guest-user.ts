@@ -1,12 +1,12 @@
 import { AppService } from "./app.service";
 import { ConusmaException } from "./Exceptions/conusma-exception";
 import { GuestUserModel } from "./Models/guest-user-model";
-import { MeetingModel } from "./Models/meeting-model";
 import { MeetingUserModel } from "./Models/meeting-user-model";
 import { Meeting } from "./meeting";
 import { Store } from "@ngrx/store";
 import { Observable } from "rxjs";
 import { updateMeetingUser } from "./meeting.actions";
+import { MeetingModel } from "./Models/meeting-model";
 
 export class GuestUser {
   private appService: AppService;
@@ -15,35 +15,32 @@ export class GuestUser {
   }
   public userInfo: GuestUserModel = new GuestUserModel();
   public async create() {
-    var token = localStorage.getItem('JWT_TOKEN');
+    var token = this.appService.getJwtToken();
     if (token != undefined && token != null) {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
-      localStorage.setItem('UserData', JSON.stringify(this.userInfo));
+      this.appService.saveUserData(this.userInfo,true);
     }
     else {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
-      localStorage.setItem('UserData', JSON.stringify(this.userInfo));
+      this.appService.saveUserData(this.userInfo,true);
 
     }
 
   }
   public async load() {
-    var token = localStorage.getItem('JWT_TOKEN');
+    var token = this.appService.getJwtToken();
     if (token != undefined && token != null) {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
-      localStorage.setItem('UserData', JSON.stringify(this.userInfo));
+      this.appService.saveUserData(this.userInfo,true);
     }
     else {
       var result = await this.appService.createPublicUser();
       this.userInfo = result;
-      localStorage.setItem('JWT_TOKEN', this.userInfo.Token);
-      localStorage.setItem('UserData', JSON.stringify(this.userInfo));
+      this.appService.saveUserData(this.userInfo,true);
+
     }
 
   }
@@ -53,7 +50,7 @@ export class GuestUser {
       var meeting: MeetingModel = resultcode;
       var result = await this.appService.JoinMeeting({'meetingId':meeting.MeetingId, 'password':meeting.Password, 'meetingFullName':meetingName});
       var meetingUser: MeetingUserModel = result;
-      var activeMeeting = new Meeting(meetingUser, this.appService);
+      var activeMeeting = new Meeting(meetingUser,meeting, this.appService);
       return activeMeeting;
     } catch (error:any) {
       throw new ConusmaException("joinMeeting", "failed to join the meeting", error);
@@ -65,7 +62,7 @@ export class GuestUser {
       var meeting: MeetingModel = resultcode;
       var result = await this.appService.JoinMeeting({'meetingId':meeting.MeetingId,'password': meeting.Password,'meetingFullName': meetingName});
       var meetingUser: MeetingUserModel = result;
-      var activeMeeting = new Meeting(meetingUser, this.appService);
+      var activeMeeting = new Meeting(meetingUser,meeting, this.appService);
       return activeMeeting;
     } catch (error:any) {
       throw new ConusmaException("joinMeeting", "failed to join the meeting", error);

@@ -2,10 +2,11 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from "@angular/common/http
 import { Observable } from "rxjs";
 import { ConusmaException } from "../public-api";
 import { ConusmaRestApiException } from "./Exceptions/conusma-restapi-exception";
+import { SuccessApiMesage } from "./Models/success-api-message";
 
 export class AppService {
   private appId: string = "";
-  private apiUrl: string = "";
+  public apiUrl: string = "";
   private deviceId: string = "";
   private version: string = "1.0.0";
   constructor( private http: HttpClient,parameters: { apiUrl: string, deviceId: string, version: string }) {
@@ -14,7 +15,7 @@ export class AppService {
     this.version = parameters.version;
   }
   public getJwtToken() {
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme = <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
       return localStorage.getItem("JWT_TOKEN");
     } else {
@@ -24,9 +25,9 @@ export class AppService {
   public saveUserData(userData:any,ispublic =false) {
     if(ispublic)
     {
-      localStorage.setItem("rememberme","true");
+      localStorage.setItem("rememberme","false");
     }
-    let rememberme = localStorage.getItem("rememberme");
+    let rememberme = <boolean>JSON.parse(localStorage.getItem("rememberme"));
     if (rememberme) {
        localStorage.setItem("JWT_TOKEN",userData.Token);
        localStorage.setItem("UserData",JSON.stringify(userData));
@@ -36,7 +37,7 @@ export class AppService {
     }
   }
   public httpPost(service: string, data: any): Observable<any> {
-    var token = localStorage.getItem("JWT_TOKEN");
+    var token = this.getJwtToken();
     if(token != null && token != undefined)
     {
       var headers = new HttpHeaders({ "Content-Type": "application/json; charset=utf-8","Authorization": "Bearer " + token });
@@ -65,9 +66,10 @@ export class AppService {
     });
   }
   public async isMeetingValid(data:any) {
-    return await this.httpPost("Meeting/MeetingIsValid" , this).toPromise().then((res)=>{
+    return await this.httpPost("Meeting/MeetingIsValid" , data).toPromise().then((res)=>{
       return res;
     },err=>{
+      console.log(err);
       throw new ConusmaException(err.error.type,err.err.value);
     });
   }
@@ -80,6 +82,14 @@ export class AppService {
   }
   public async IsItApproved(MeetingUserId: string) {
     return await this.httpPost("Live/IsItApproved/" + MeetingUserId, null).toPromise().then((res)=>{
+      console.log("Response"+res);
+      return res;
+    },err=>{
+      throw new ConusmaException(err.error.type,err.err.value);
+    });
+  }
+  public async IsItApprovedRetryControl(MeetingUserId: string) {
+    return await this.httpPost("Live/IsItApprovedRetryControl/" + MeetingUserId, null).toPromise().then((res)=>{
       console.log("Response"+res);
       return res;
     },err=>{
@@ -448,7 +458,7 @@ export class AppService {
 
   public async signup(data: any){
     return await this.httpPost("User/AddUser", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage>res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });
@@ -456,23 +466,31 @@ export class AppService {
 
   public async signupConfirm(data: any) {
     return await this.httpPost("User/EMailVerificationCode", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage> res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });
   }
 
-  public async forgotPassword(data: any){
+  public async forgotPassword(email: string,url:string=""){
+    var data = {
+      'EMail':email,
+      'Url':url
+    };
     return await this.httpPost("User/ForgotPassword", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage>res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });
   }
 
-  public async controlForgotPasswordCode(data: any){
+  public async controlForgotPasswordCode(code:string,password:string){
+    var data = {
+      'Password':password,
+      'Code':code
+    };
     return await this.httpPost("User/ControlForgotPasswordCode", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage>res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });
@@ -480,7 +498,7 @@ export class AppService {
 
   public async changePassword(data: any) {
     return await this.httpPost("User/ChangePassword", data).toPromise().then((res)=>{
-      return res;
+      return <SuccessApiMesage>res;
     },err=>{
       throw new ConusmaException(err.error.type,err.err.value);
     });

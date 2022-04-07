@@ -3,8 +3,8 @@ export class UserModel {
     public SurName:string = "";
     public UserName:string = "";
     public Token:string = "";
-    public Email:string = "";
-    public EmailVerified:boolean = false;
+    public EMail:string = "";
+    public EMailVerified:boolean = false;
     public PhoneNumber:string = "";
     public Address1:string = "";
     public Address2:string = "";

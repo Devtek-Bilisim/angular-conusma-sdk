@@ -246,22 +246,32 @@ export class Meeting {
             if (this.meetingWorker != null) {
                 this.meetingWorker.terminate();
             }
-            for (let item of this.connections) {
-                if (!item.isProducer)
-                    item.mediaServer.closeConsumer(item.user);
-                else {
-                    item.mediaServer.closeProducer();
+            try {
+                for (let item of this.connections) {
+                    if (!item.isProducer)
+                        item.mediaServer.closeConsumer(item.user);
+                    else {
+                        item.mediaServer.closeProducer();
+                    }
+                    if (item.stream != null) {
+                        item.stream.getTracks().forEach((track: MediaStreamTrack) => { track.stop(); });
+                    }
                 }
-                if (item.stream != null) {
-                    item.stream.getTracks().forEach((track: MediaStreamTrack) => { track.stop(); });
-                }
+            } catch (error) {
+                console.error(error);
+
             }
-            for (var i = 0; i < this.connections.length; i++) {
-                if (this.connections[i].mediaServer.socket && this.connections[i].mediaServer.socket.connected) {
-                    this.connections[i].mediaServer.socket.close();
+                try {
+                    for (var i = 0; i < this.connections.length; i++) {
+                        if (this.connections[i].mediaServer.socket && this.connections[i].mediaServer.socket.connected) {
+                            this.connections[i].mediaServer.socket.close();
+                        }
+                        this.removeItemOnce(this.connections, i);
+                    }
+                } catch (error) {
+                    console.error(error);
                 }
-                this.removeItemOnce(this.connections, i);
-            }
+          
             if (sendCloseRequest) {
                 var closeData = { 'MeetingUserId': this.activeUser.Id };
                 await this.appService.LiveClose(closeData);
